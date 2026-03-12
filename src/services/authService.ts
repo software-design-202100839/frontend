@@ -5,6 +5,15 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface SignupRequest {
+  email: string;
+  password: string;
+  name: string;
+  phone?: string;
+  role: 'TEACHER' | 'STUDENT' | 'PARENT';
+  roleDetail?: Record<string, unknown>;
+}
+
 export interface TokenResponse {
   accessToken: string;
   refreshToken: string;
@@ -27,6 +36,11 @@ export interface ApiResponse<T> {
 }
 
 const authService = {
+  async signup(request: SignupRequest): Promise<UserInfo> {
+    const { data } = await api.post<ApiResponse<UserInfo>>('/auth/signup', request);
+    return data.data;
+  },
+
   async login(request: LoginRequest): Promise<TokenResponse> {
     const { data } = await api.post<ApiResponse<TokenResponse>>('/auth/login', request);
     return data.data;
@@ -36,6 +50,7 @@ const authService = {
     await api.post('/auth/logout');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
   },
 
   async getMe(): Promise<UserInfo> {
