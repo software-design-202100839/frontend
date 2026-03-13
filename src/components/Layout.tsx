@@ -26,6 +26,7 @@ function Layout() {
   const navItems = [
     { path: '/', label: '대시보드' },
     { path: '/grades', label: '성적 관리' },
+    { path: '/records', label: '학생부' },
   ];
 
   return (

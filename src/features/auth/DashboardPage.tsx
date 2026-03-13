@@ -25,6 +25,11 @@ function DashboardPage() {
           <p style={styles.cardDesc}>학생별 과목 성적 조회 및 관리</p>
         </Link>
 
+        <Link to="/records" style={styles.card}>
+          <h3 style={styles.cardTitle}>학생부</h3>
+          <p style={styles.cardDesc}>출결, 특기사항, 수상 등 학생부 관리</p>
+        </Link>
+
         {isTeacher && (
           <div style={styles.card}>
             <h3 style={styles.cardTitle}>등록 학생</h3>
