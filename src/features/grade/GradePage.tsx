@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import gradeService from '../../services/gradeService';
 import type { StudentInfo, StudentScoreSummary, Subject } from '../../services/gradeService';
 import authService from '../../services/authService';
@@ -23,8 +23,10 @@ function GradePage() {
     gradeService.getStudents().then(setStudents);
   }, []);
 
-  const loadScores = async () => {
-    if (!selectedStudentId) return;
+  const loadScores = useCallback(async () => {
+    if (!selectedStudentId) {
+      return;
+    }
     setLoading(true);
     try {
       const data = await gradeService.getStudentScores(selectedStudentId, year, semester);
@@ -34,11 +36,13 @@ function GradePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedStudentId, year, semester]);
 
   useEffect(() => {
-    if (selectedStudentId) loadScores();
-  }, [selectedStudentId, year, semester]);
+    if (selectedStudentId) {
+      loadScores();
+    }
+  }, [selectedStudentId, year, semester, loadScores]);
 
   const handleScoreCreated = () => {
     setShowForm(false);
@@ -46,7 +50,9 @@ function GradePage() {
   };
 
   const handleDelete = async (scoreId: number) => {
-    if (!confirm('성적을 삭제하시겠습니까?')) return;
+    if (!confirm('성적을 삭제하시겠습니까?')) {
+      return;
+    }
     await gradeService.deleteScore(scoreId);
     loadScores();
   };
@@ -63,11 +69,7 @@ function GradePage() {
       </div>
 
       {showForm && (
-        <ScoreForm
-          students={students}
-          subjects={subjects}
-          onSuccess={handleScoreCreated}
-        />
+        <ScoreForm students={students} subjects={subjects} onSuccess={handleScoreCreated} />
       )}
 
       <div style={styles.filterRow}>
@@ -111,7 +113,9 @@ function GradePage() {
       {summary && summary.scores.length > 0 && (
         <>
           <div style={styles.summaryCard}>
-            <h3>{summary.studentName}의 {summary.year}년 {summary.semester}학기 성적</h3>
+            <h3>
+              {summary.studentName}의 {summary.year}년 {summary.semester}학기 성적
+            </h3>
             <div style={styles.summaryStats}>
               <div style={styles.stat}>
                 <span style={styles.statLabel}>총점</span>
@@ -149,10 +153,7 @@ function GradePage() {
                   <td style={styles.td}>{s.rank ?? '-'}</td>
                   {isTeacher && (
                     <td style={styles.td}>
-                      <button
-                        onClick={() => handleDelete(s.id)}
-                        style={styles.deleteButton}
-                      >
+                      <button onClick={() => handleDelete(s.id)} style={styles.deleteButton}>
                         삭제
                       </button>
                     </td>

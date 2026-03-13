@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import gradeService from '../../services/gradeService';
 import studentService from '../../services/studentService';
 import type { StudentInfo } from '../../services/gradeService';
@@ -6,13 +6,7 @@ import type { StudentRecord, RecordCategory } from '../../services/studentServic
 import authService from '../../services/authService';
 import RecordForm from './RecordForm';
 
-const categories: RecordCategory[] = [
-  'ATTENDANCE',
-  'SPECIAL_NOTE',
-  'AWARD',
-  'VOLUNTEER',
-  'OTHER',
-];
+const categories: RecordCategory[] = ['ATTENDANCE', 'SPECIAL_NOTE', 'AWARD', 'VOLUNTEER', 'OTHER'];
 
 function StudentRecordPage() {
   const [students, setStudents] = useState<StudentInfo[]>([]);
@@ -31,8 +25,10 @@ function StudentRecordPage() {
     gradeService.getStudents().then(setStudents);
   }, []);
 
-  const loadRecords = async () => {
-    if (!selectedStudentId) return;
+  const loadRecords = useCallback(async () => {
+    if (!selectedStudentId) {
+      return;
+    }
     setLoading(true);
     try {
       const data = await studentService.getStudentRecords(
@@ -47,11 +43,13 @@ function StudentRecordPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedStudentId, year, semester, categoryFilter]);
 
   useEffect(() => {
-    if (selectedStudentId) loadRecords();
-  }, [selectedStudentId, year, semester, categoryFilter]);
+    if (selectedStudentId) {
+      loadRecords();
+    }
+  }, [selectedStudentId, year, semester, categoryFilter, loadRecords]);
 
   const handleCreated = () => {
     setShowForm(false);
@@ -59,7 +57,9 @@ function StudentRecordPage() {
   };
 
   const handleDelete = async (recordId: number) => {
-    if (!confirm('학생부 항목을 삭제하시겠습니까?')) return;
+    if (!confirm('학생부 항목을 삭제하시겠습니까?')) {
+      return;
+    }
     await studentService.deleteRecord(recordId);
     loadRecords();
   };
@@ -95,9 +95,15 @@ function StudentRecordPage() {
           ))}
         </select>
 
-        <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={styles.select}>
+        <select
+          value={year}
+          onChange={(e) => setYear(Number(e.target.value))}
+          style={styles.select}
+        >
           {[2024, 2025, 2026].map((y) => (
-            <option key={y} value={y}>{y}년</option>
+            <option key={y} value={y}>
+              {y}년
+            </option>
           ))}
         </select>
 
@@ -126,9 +132,8 @@ function StudentRecordPage() {
 
       {selectedStudent && (
         <div style={styles.studentInfo}>
-          <strong>{selectedStudent.name}</strong> |{' '}
-          {selectedStudent.grade}학년 {selectedStudent.classNum}반{' '}
-          {selectedStudent.studentNum}번
+          <strong>{selectedStudent.name}</strong> | {selectedStudent.grade}학년{' '}
+          {selectedStudent.classNum}반 {selectedStudent.studentNum}번
         </div>
       )}
 
@@ -141,9 +146,7 @@ function StudentRecordPage() {
       {records.map((record) => (
         <div key={record.id} style={styles.recordCard}>
           <div style={styles.recordHeader}>
-            <span style={styles.badge}>
-              {studentService.categoryLabels[record.category]}
-            </span>
+            <span style={styles.badge}>{studentService.categoryLabels[record.category]}</span>
             <span style={styles.date}>
               {new Date(record.updatedAt).toLocaleDateString('ko-KR')}
             </span>

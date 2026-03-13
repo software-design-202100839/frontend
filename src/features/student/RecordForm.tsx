@@ -61,7 +61,9 @@ function RecordForm({ studentId, onSuccess }: Props) {
       <div style={styles.row}>
         <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={styles.input}>
           {[2024, 2025, 2026].map((y) => (
-            <option key={y} value={y}>{y}년</option>
+            <option key={y} value={y}>
+              {y}년
+            </option>
           ))}
         </select>
 

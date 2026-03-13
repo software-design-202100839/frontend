@@ -14,7 +14,9 @@ interface Props {
 }
 
 function ScoreRadarChart({ scores }: Props) {
-  if (scores.length === 0) return null;
+  if (scores.length === 0) {
+    return null;
+  }
 
   const chartData = scores.map((s) => ({
     subject: s.subjectName,
@@ -30,13 +32,7 @@ function ScoreRadarChart({ scores }: Props) {
           <PolarGrid />
           <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12 }} />
           <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10 }} />
-          <Radar
-            name="점수"
-            dataKey="score"
-            stroke="#4a90d9"
-            fill="#4a90d9"
-            fillOpacity={0.3}
-          />
+          <Radar name="점수" dataKey="score" stroke="#4a90d9" fill="#4a90d9" fillOpacity={0.3} />
           <Tooltip />
         </RadarChart>
       </ResponsiveContainer>
