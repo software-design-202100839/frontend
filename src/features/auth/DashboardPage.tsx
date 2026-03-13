@@ -1,85 +1,71 @@
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import authService from '../../services/authService';
+import gradeService from '../../services/gradeService';
 
 function DashboardPage() {
-  const navigate = useNavigate();
   const user = authService.getStoredUser();
+  const isTeacher = user?.role === 'TEACHER';
+  const [studentCount, setStudentCount] = useState(0);
 
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-    } catch {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
+  useEffect(() => {
+    if (isTeacher) {
+      gradeService.getStudents().then((s) => setStudentCount(s.length));
     }
-    navigate('/login');
-  };
-
-  const roleLabel: Record<string, string> = {
-    TEACHER: '교사',
-    STUDENT: '학생',
-    PARENT: '학부모',
-  };
+  }, [isTeacher]);
 
   return (
-    <div style={styles.container}>
-      <header style={styles.header}>
-        <h1 style={styles.logo}>SSCM</h1>
-        <div style={styles.userInfo}>
-          <span>
-            {user?.name} ({roleLabel[user?.role || '']})
-          </span>
-          <button onClick={handleLogout} style={styles.logoutButton}>
-            로그아웃
-          </button>
-        </div>
-      </header>
-      <main style={styles.main}>
-        <h2>대시보드</h2>
-        <p>Sprint 1에서 기능이 추가됩니다.</p>
-      </main>
+    <div>
+      <h2>대시보드</h2>
+      <p>환영합니다, {user?.name}님.</p>
+
+      <div style={styles.cardGrid}>
+        <Link to="/grades" style={styles.card}>
+          <h3 style={styles.cardTitle}>성적 관리</h3>
+          <p style={styles.cardDesc}>학생별 과목 성적 조회 및 관리</p>
+        </Link>
+
+        {isTeacher && (
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>등록 학생</h3>
+            <p style={styles.cardValue}>{studentCount}명</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#f5f5f5',
+  cardGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+    gap: '16px',
+    marginTop: '20px',
   },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '12px 24px',
+  card: {
     backgroundColor: '#fff',
-    borderBottom: '1px solid #e5e5e5',
+    padding: '20px',
+    borderRadius: '8px',
+    border: '1px solid #e5e5e5',
+    textDecoration: 'none',
+    color: 'inherit',
   },
-  logo: {
+  cardTitle: {
+    margin: '0 0 8px',
+    fontSize: '16px',
+    color: '#333',
+  },
+  cardDesc: {
     margin: 0,
-    fontSize: '20px',
-    color: '#4a90d9',
-  },
-  userInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    fontSize: '14px',
-    color: '#666',
-  },
-  logoutButton: {
-    padding: '6px 12px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    backgroundColor: '#fff',
-    cursor: 'pointer',
     fontSize: '13px',
+    color: '#999',
   },
-  main: {
-    padding: '24px',
-    maxWidth: '1200px',
-    margin: '0 auto',
+  cardValue: {
+    margin: 0,
+    fontSize: '28px',
+    fontWeight: 'bold',
+    color: '#4a90d9',
   },
 };
 
