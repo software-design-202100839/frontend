@@ -27,6 +27,8 @@ function Layout() {
     { path: '/', label: '대시보드' },
     { path: '/grades', label: '성적 관리' },
     { path: '/records', label: '학생부' },
+    { path: '/feedbacks', label: '피드백' },
+    { path: '/counselings', label: '상담내역' },
   ];
 
   return (
