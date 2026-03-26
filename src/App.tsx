@@ -6,8 +6,19 @@ import GradePage from './features/grade/GradePage';
 import StudentRecordPage from './features/student/StudentRecordPage';
 import FeedbackPage from './features/feedback/FeedbackPage';
 import CounselingPage from './features/counsel/CounselingPage';
+import NotificationPage from './features/notification/NotificationPage';
+import ParentDashboardPage from './features/notification/ParentDashboardPage';
 import PrivateRoute from './routes/PrivateRoute';
 import Layout from './components/Layout';
+import authService from './services/authService';
+
+function DashboardRouter() {
+  const user = authService.getStoredUser();
+  if (user?.role === 'PARENT') {
+    return <ParentDashboardPage />;
+  }
+  return <DashboardPage />;
+}
 
 function App() {
   return (
@@ -23,11 +34,12 @@ function App() {
             </PrivateRoute>
           }
         >
-          <Route index element={<DashboardPage />} />
+          <Route index element={<DashboardRouter />} />
           <Route path="grades" element={<GradePage />} />
           <Route path="records" element={<StudentRecordPage />} />
           <Route path="feedbacks" element={<FeedbackPage />} />
           <Route path="counselings" element={<CounselingPage />} />
+          <Route path="notifications" element={<NotificationPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

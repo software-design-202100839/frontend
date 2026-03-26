@@ -1,10 +1,12 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import authService from '../services/authService';
+import { useNotification } from '../hooks/useNotification';
 
 function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const user = authService.getStoredUser();
+  const { unreadCount } = useNotification();
 
   const handleLogout = async () => {
     try {
@@ -29,6 +31,7 @@ function Layout() {
     { path: '/records', label: '학생부' },
     { path: '/feedbacks', label: '피드백' },
     { path: '/counselings', label: '상담내역' },
+    { path: '/notifications', label: '알림' },
   ];
 
   return (
@@ -52,6 +55,10 @@ function Layout() {
           </nav>
         </div>
         <div style={styles.userInfo}>
+          <Link to="/notifications" style={styles.bellLink}>
+            <span style={styles.bell}>&#128276;</span>
+            {unreadCount > 0 && <span style={styles.badge}>{unreadCount}</span>}
+          </Link>
           <span>
             {user?.name} ({roleLabel[user?.role || '']})
           </span>
@@ -112,6 +119,29 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '12px',
     fontSize: '14px',
     color: '#666',
+  },
+  bellLink: {
+    position: 'relative',
+    textDecoration: 'none',
+    marginRight: '4px',
+  },
+  bell: {
+    fontSize: '20px',
+    cursor: 'pointer',
+  },
+  badge: {
+    position: 'absolute',
+    top: '-6px',
+    right: '-8px',
+    backgroundColor: '#ff4d4f',
+    color: '#fff',
+    fontSize: '10px',
+    fontWeight: 'bold',
+    borderRadius: '10px',
+    padding: '1px 5px',
+    minWidth: '16px',
+    textAlign: 'center',
+    lineHeight: '14px',
   },
   logoutButton: {
     padding: '6px 12px',
