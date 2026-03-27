@@ -1,0 +1,7 @@
+.git
+node_modules
+dist
+*.md
+.env
+e2e
+test-results
