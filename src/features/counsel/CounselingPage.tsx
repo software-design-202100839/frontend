@@ -21,7 +21,11 @@ function CounselingPage() {
   const isTeacher = user?.role === 'TEACHER';
 
   useEffect(() => {
-    gradeService.getStudents().then(setStudents);
+    if (isTeacher) {
+      gradeService.getStudents().then(setStudents);
+    } else if (user?.roleEntityId) {
+      setSelectedStudentId(user.roleEntityId);
+    }
   }, []);
 
   const loadCounselings = useCallback(async () => {
@@ -93,18 +97,20 @@ function CounselingPage() {
       )}
 
       <div style={styles.filterRow}>
-        <select
-          value={selectedStudentId ?? ''}
-          onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)}
-          style={styles.select}
-        >
-          <option value="">학생 선택</option>
-          {students.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.grade}학년 {s.classNum}반 {s.studentNum}번 {s.name}
-            </option>
-          ))}
-        </select>
+        {isTeacher && (
+          <select
+            value={selectedStudentId ?? ''}
+            onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)}
+            style={styles.select}
+          >
+            <option value="">학생 선택</option>
+            {students.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.grade}학년 {s.classNum}반 {s.studentNum}번 {s.name}
+              </option>
+            ))}
+          </select>
+        )}
 
         <select
           value={categoryFilter}
