@@ -1,6 +1,6 @@
 import { Page } from '@playwright/test';
 
-const API_BASE = 'http://localhost:8080/api/v1';
+const API_BASE = (process.env.BASE_URL || 'http://localhost:8080') + '/api/v1';
 
 /** 교사 계정으로 회원가입 (이미 존재하면 무시) */
 export async function ensureTeacher(page: Page, email: string, password: string, name: string) {

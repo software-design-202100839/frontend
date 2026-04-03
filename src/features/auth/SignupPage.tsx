@@ -197,6 +197,18 @@ function SignupPage() {
                   style={styles.input}
                 />
               </div>
+              <div style={styles.field}>
+                <label style={styles.label}>입학년도</label>
+                <input
+                  type="number"
+                  min={2020}
+                  max={2030}
+                  value={(form.roleDetail?.admissionYear as number) || new Date().getFullYear()}
+                  onChange={(e) => handleRoleDetailChange('admissionYear', parseInt(e.target.value))}
+                  required
+                  style={styles.input}
+                />
+              </div>
             </div>
           )}
 
