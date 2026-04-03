@@ -27,6 +27,7 @@ export interface UserInfo {
   email: string;
   name: string;
   role: 'TEACHER' | 'STUDENT' | 'PARENT';
+  roleEntityId?: number;
 }
 
 export interface ApiResponse<T> {
