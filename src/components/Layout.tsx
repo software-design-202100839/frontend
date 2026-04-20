@@ -20,19 +20,28 @@ function Layout() {
   };
 
   const roleLabel: Record<string, string> = {
+    ADMIN: '관리자',
     TEACHER: '교사',
     STUDENT: '학생',
     PARENT: '학부모',
   };
 
-  const navItems = [
-    { path: '/', label: '대시보드' },
-    { path: '/grades', label: '성적 관리' },
-    { path: '/records', label: '학생부' },
-    { path: '/feedbacks', label: '피드백' },
-    { path: '/counselings', label: '상담내역' },
-    { path: '/notifications', label: '알림' },
-  ];
+  const role = user?.role;
+
+  // ADMIN은 관리 페이지만, STUDENT/PARENT는 상담내역 미표시
+  const navItems = role === 'ADMIN'
+    ? [
+        { path: '/', label: '대시보드' },
+        { path: '/admin', label: '관리자 페이지' },
+      ]
+    : [
+        { path: '/', label: '대시보드' },
+        { path: '/grades', label: '성적 관리' },
+        { path: '/records', label: '학생부' },
+        { path: '/feedbacks', label: '피드백' },
+        ...(role === 'TEACHER' ? [{ path: '/counselings', label: '상담내역' }] : []),
+        { path: '/notifications', label: '알림' },
+      ];
 
   return (
     <div style={styles.container}>

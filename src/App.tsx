@@ -3,6 +3,7 @@ import LoginPage from './features/auth/LoginPage';
 import ActivatePage from './features/auth/ActivatePage';
 import PasswordResetPage from './features/auth/PasswordResetPage';
 import DashboardPage from './features/auth/DashboardPage';
+import AdminPage from './features/admin/AdminPage';
 import GradePage from './features/grade/GradePage';
 import StudentRecordPage from './features/student/StudentRecordPage';
 import FeedbackPage from './features/feedback/FeedbackPage';
@@ -49,6 +50,14 @@ function App() {
             }
           />
           <Route path="notifications" element={<NotificationPage />} />
+          <Route
+            path="admin"
+            element={
+              <PrivateRoute roles={['ADMIN']}>
+                <AdminPage />
+              </PrivateRoute>
+            }
+          />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
