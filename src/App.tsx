@@ -3,6 +3,7 @@ import LoginPage from './features/auth/LoginPage';
 import ActivatePage from './features/auth/ActivatePage';
 import PasswordResetPage from './features/auth/PasswordResetPage';
 import DashboardPage from './features/auth/DashboardPage';
+import StudentDashboardPage from './features/auth/StudentDashboardPage';
 import GradePage from './features/grade/GradePage';
 import StudentRecordPage from './features/student/StudentRecordPage';
 import FeedbackPage from './features/feedback/FeedbackPage';
@@ -15,6 +16,12 @@ import authService from './services/authService';
 
 function DashboardRouter() {
   const user = authService.getStoredUser();
+  if (user?.role === 'ADMIN') {
+    return <Navigate to="/admin" replace />;
+  }
+  if (user?.role === 'STUDENT') {
+    return <StudentDashboardPage />;
+  }
   if (user?.role === 'PARENT') {
     return <ParentDashboardPage />;
   }

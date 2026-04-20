@@ -29,11 +29,16 @@ function FeedbackPage() {
   const user = authService.getStoredUser();
   const isTeacher = user?.role === 'TEACHER';
 
+  const isParent = user?.role === 'PARENT';
+  const children = user?.roleDetail?.children ?? [];
+
   useEffect(() => {
     if (isTeacher) {
       gradeService.getStudents().then(setStudents);
-    } else if (user?.roleEntityId) {
+    } else if (user?.role === 'STUDENT' && user?.roleEntityId) {
       setSelectedStudentId(user.roleEntityId);
+    } else if (isParent && children.length > 0) {
+      setSelectedStudentId(children[0].id);
     }
   }, []);
 
@@ -116,6 +121,20 @@ function FeedbackPage() {
             {students.map((s) => (
               <option key={s.id} value={s.id}>
                 {formatStudentLabel(s, CURRENT_YEAR)}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {isParent && children.length > 1 && (
+          <select
+            value={selectedStudentId ?? ''}
+            onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)}
+            style={styles.select}
+          >
+            {children.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
               </option>
             ))}
           </select>
