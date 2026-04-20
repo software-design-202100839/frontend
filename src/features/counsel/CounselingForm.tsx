@@ -2,6 +2,9 @@ import { useState } from 'react';
 import counselService from '../../services/counselService';
 import type { CounselCategory, CounselingResponse } from '../../services/counselService';
 import type { StudentInfo } from '../../services/gradeService';
+import { formatStudentLabel } from '../../types/student';
+
+const CURRENT_YEAR = new Date().getFullYear();
 
 interface Props {
   students: StudentInfo[];
@@ -93,7 +96,7 @@ function CounselingForm({ students, editTarget, onSuccess }: Props) {
             <option value="">학생 선택</option>
             {students.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.grade}-{s.classNum}-{s.studentNum} {s.name}
+                {formatStudentLabel(s, CURRENT_YEAR)}
               </option>
             ))}
           </select>

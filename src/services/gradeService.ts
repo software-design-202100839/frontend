@@ -1,5 +1,7 @@
 import api from './api';
 import type { ApiResponse } from './authService';
+export type { StudentInfo, Enrollment } from '../types/student';
+export { getEnrollment, formatStudentLabel, getLatestEnrollment } from '../types/student';
 
 export interface Subject {
   id: number;
@@ -41,16 +43,7 @@ export interface ScoreRequest {
   score: number;
 }
 
-export interface StudentInfo {
-  id: number;
-  name: string;
-  email: string;
-  phone: string | null;
-  grade: number;
-  classNum: number;
-  studentNum: number;
-  admissionYear: number;
-}
+import type { StudentInfo } from '../types/student';
 
 const gradeService = {
   async getSubjects(): Promise<Subject[]> {

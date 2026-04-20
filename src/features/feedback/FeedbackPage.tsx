@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import gradeService from '../../services/gradeService';
 import feedbackService from '../../services/feedbackService';
 import type { StudentInfo } from '../../services/gradeService';
+import { formatStudentLabel } from '../../types/student';
+
+const CURRENT_YEAR = new Date().getFullYear();
 import type { FeedbackResponse, FeedbackCategory } from '../../services/feedbackService';
 import authService from '../../services/authService';
 import FeedbackForm from './FeedbackForm';
@@ -112,7 +115,7 @@ function FeedbackPage() {
             <option value="">학생 선택</option>
             {students.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.grade}학년 {s.classNum}반 {s.studentNum}번 {s.name}
+                {formatStudentLabel(s, CURRENT_YEAR)}
               </option>
             ))}
           </select>
@@ -134,8 +137,7 @@ function FeedbackPage() {
 
       {selectedStudent && (
         <div style={styles.studentInfo}>
-          <strong>{selectedStudent.name}</strong> | {selectedStudent.grade}학년{' '}
-          {selectedStudent.classNum}반 {selectedStudent.studentNum}번
+          <strong>{formatStudentLabel(selectedStudent, CURRENT_YEAR)}</strong>
         </div>
       )}
 

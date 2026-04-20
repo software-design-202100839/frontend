@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import gradeService from '../../services/gradeService';
 import type { StudentInfo, StudentScoreSummary, Subject } from '../../services/gradeService';
+import { formatStudentLabel } from '../../types/student';
 import authService from '../../services/authService';
 import ScoreForm from './ScoreForm';
 import ScoreRadarChart from './ScoreRadarChart';
@@ -86,7 +87,7 @@ function GradePage() {
             <option value="">학생 선택</option>
             {students.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.grade}학년 {s.classNum}반 {s.studentNum}번 {s.name}
+                {formatStudentLabel(s, year)}
               </option>
             ))}
           </select>

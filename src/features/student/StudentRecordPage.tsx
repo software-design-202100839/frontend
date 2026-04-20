@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import gradeService from '../../services/gradeService';
 import studentService from '../../services/studentService';
 import type { StudentInfo } from '../../services/gradeService';
+import { formatStudentLabel } from '../../types/student';
 import type { StudentRecord, RecordCategory } from '../../services/studentService';
 import authService from '../../services/authService';
 import RecordForm from './RecordForm';
@@ -95,7 +96,7 @@ function StudentRecordPage() {
             <option value="">학생 선택</option>
             {students.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.grade}학년 {s.classNum}반 {s.studentNum}번 {s.name}
+                {formatStudentLabel(s, year)}
               </option>
             ))}
           </select>
@@ -138,8 +139,7 @@ function StudentRecordPage() {
 
       {selectedStudent && (
         <div style={styles.studentInfo}>
-          <strong>{selectedStudent.name}</strong> | {selectedStudent.grade}학년{' '}
-          {selectedStudent.classNum}반 {selectedStudent.studentNum}번
+          <strong>{formatStudentLabel(selectedStudent, year)}</strong>
         </div>
       )}
 

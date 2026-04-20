@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import gradeService from '../../services/gradeService';
 import type { StudentInfo, Subject } from '../../services/gradeService';
+import { formatStudentLabel } from '../../types/student';
 
 interface Props {
   students: StudentInfo[];
@@ -59,7 +60,7 @@ function ScoreForm({ students, subjects, onSuccess }: Props) {
           <option value="">학생 선택</option>
           {students.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.grade}-{s.classNum}-{s.studentNum} {s.name}
+              {formatStudentLabel(s, year)}
             </option>
           ))}
         </select>
