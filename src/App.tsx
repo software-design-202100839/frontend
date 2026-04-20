@@ -10,6 +10,7 @@ import FeedbackPage from './features/feedback/FeedbackPage';
 import CounselingPage from './features/counsel/CounselingPage';
 import NotificationPage from './features/notification/NotificationPage';
 import ParentDashboardPage from './features/notification/ParentDashboardPage';
+import AdminPage from './features/admin/AdminPage';
 import PrivateRoute from './routes/PrivateRoute';
 import Layout from './components/Layout';
 import authService from './services/authService';
@@ -56,6 +57,14 @@ function App() {
             }
           />
           <Route path="notifications" element={<NotificationPage />} />
+          <Route
+            path="admin"
+            element={
+              <PrivateRoute roles={['ADMIN']}>
+                <AdminPage />
+              </PrivateRoute>
+            }
+          />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
