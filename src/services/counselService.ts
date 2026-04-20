@@ -1,7 +1,7 @@
 import api from './api';
 import type { ApiResponse } from './authService';
 
-export type CounselCategory = 'ACADEMIC' | 'CAREER' | 'BEHAVIOR' | 'PERSONAL' | 'OTHER';
+export type CounselCategory = 'HOMEROOM' | 'CAREER' | 'LIFE' | 'PROFESSIONAL' | 'OTHER';
 
 export interface CounselingResponse {
   id: number;
@@ -39,10 +39,10 @@ export interface CounselingUpdateRequest {
 }
 
 const categoryLabels: Record<CounselCategory, string> = {
-  ACADEMIC: '학업',
+  HOMEROOM: '담임상담',
   CAREER: '진로',
-  BEHAVIOR: '행동',
-  PERSONAL: '개인/심리',
+  LIFE: '생활지도',
+  PROFESSIONAL: '전문상담',
   OTHER: '기타',
 };
 

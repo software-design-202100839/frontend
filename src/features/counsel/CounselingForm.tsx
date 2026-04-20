@@ -13,10 +13,10 @@ interface Props {
 }
 
 const categories: { value: CounselCategory; label: string }[] = [
-  { value: 'ACADEMIC', label: '학업' },
+  { value: 'HOMEROOM', label: '담임상담' },
   { value: 'CAREER', label: '진로' },
-  { value: 'BEHAVIOR', label: '행동' },
-  { value: 'PERSONAL', label: '개인/심리' },
+  { value: 'LIFE', label: '생활지도' },
+  { value: 'PROFESSIONAL', label: '전문상담' },
   { value: 'OTHER', label: '기타' },
 ];
 
@@ -25,7 +25,7 @@ function CounselingForm({ students, editTarget, onSuccess }: Props) {
   const [counselDate, setCounselDate] = useState(
     editTarget?.counselDate ?? new Date().toISOString().slice(0, 10),
   );
-  const [category, setCategory] = useState<CounselCategory>(editTarget?.category ?? 'ACADEMIC');
+  const [category, setCategory] = useState<CounselCategory>(editTarget?.category ?? 'HOMEROOM');
   const [content, setContent] = useState(editTarget?.content ?? '');
   const [nextPlan, setNextPlan] = useState(editTarget?.nextPlan ?? '');
   const [nextCounselDate, setNextCounselDate] = useState(editTarget?.nextCounselDate ?? '');

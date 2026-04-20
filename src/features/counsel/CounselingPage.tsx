@@ -9,7 +9,7 @@ import type { CounselingResponse, CounselCategory } from '../../services/counsel
 import authService from '../../services/authService';
 import CounselingForm from './CounselingForm';
 
-const categories: CounselCategory[] = ['ACADEMIC', 'CAREER', 'BEHAVIOR', 'PERSONAL', 'OTHER'];
+const categories: CounselCategory[] = ['HOMEROOM', 'CAREER', 'LIFE', 'PROFESSIONAL', 'OTHER'];
 
 function CounselingPage() {
   const [students, setStudents] = useState<StudentInfo[]>([]);
@@ -148,7 +148,7 @@ function CounselingPage() {
             <span style={styles.counselDate}>{c.counselDate}</span>
             <span style={styles.teacher}>{c.teacherName}</span>
             {c.isShared && <span style={styles.sharedTag}>공유</span>}
-            {isTeacher && (
+            {isTeacher && c.teacherId === user?.roleEntityId && (
               <div style={styles.actions}>
                 <button onClick={() => handleEdit(c)} style={styles.editButton}>
                   수정
