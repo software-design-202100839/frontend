@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './features/auth/LoginPage';
-import SignupPage from './features/auth/SignupPage';
+import ActivatePage from './features/auth/ActivatePage';
+import PasswordResetPage from './features/auth/PasswordResetPage';
 import DashboardPage from './features/auth/DashboardPage';
 import GradePage from './features/grade/GradePage';
 import StudentRecordPage from './features/student/StudentRecordPage';
@@ -25,7 +26,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/activate" element={<ActivatePage />} />
+        <Route path="/reset-password" element={<PasswordResetPage />} />
         <Route
           path="/"
           element={
@@ -38,7 +40,14 @@ function App() {
           <Route path="grades" element={<GradePage />} />
           <Route path="records" element={<StudentRecordPage />} />
           <Route path="feedbacks" element={<FeedbackPage />} />
-          <Route path="counselings" element={<CounselingPage />} />
+          <Route
+            path="counselings"
+            element={
+              <PrivateRoute roles={['ADMIN', 'TEACHER']}>
+                <CounselingPage />
+              </PrivateRoute>
+            }
+          />
           <Route path="notifications" element={<NotificationPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

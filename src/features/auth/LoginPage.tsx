@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import authService from '../../services/authService';
 
 function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const successMessage = (location.state as { message?: string } | null)?.message ?? '';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -36,6 +38,7 @@ function LoginPage() {
         <p style={styles.subtitle}>학생 성적 및 상담 관리 시스템</p>
 
         <form onSubmit={handleSubmit} style={styles.form}>
+          {successMessage && <div style={styles.success}>{successMessage}</div>}
           {error && <div style={styles.error}>{error}</div>}
 
           <div style={styles.field}>
@@ -73,9 +76,11 @@ function LoginPage() {
           </button>
         </form>
 
-        <p style={styles.link}>
-          계정이 없으신가요? <Link to="/signup">회원가입</Link>
-        </p>
+        <div style={styles.links}>
+          <Link to="/activate" style={styles.linkAnchor}>계정 활성화</Link>
+          <span style={styles.divider}>·</span>
+          <Link to="/reset-password" style={styles.linkAnchor}>비밀번호 찾기</Link>
+        </div>
       </div>
     </div>
   );
@@ -140,6 +145,13 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     marginTop: '8px',
   },
+  success: {
+    padding: '10px',
+    backgroundColor: '#e8f5e9',
+    color: '#2e7d32',
+    borderRadius: '4px',
+    fontSize: '14px',
+  },
   error: {
     padding: '10px',
     backgroundColor: '#fee',
@@ -147,11 +159,19 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '4px',
     fontSize: '14px',
   },
-  link: {
+  links: {
     textAlign: 'center' as const,
     marginTop: '16px',
     fontSize: '14px',
     color: '#666',
+  },
+  linkAnchor: {
+    color: '#4a90d9',
+    textDecoration: 'none',
+  },
+  divider: {
+    margin: '0 8px',
+    color: '#ccc',
   },
 };
 

@@ -5,13 +5,26 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface SignupRequest {
+export interface OtpSendRequest {
+  phone: string;
+  purpose: 'ACTIVATE' | 'PW_RESET';
+}
+
+export interface ActivateRequest {
+  phone: string;
+  otpCode: string;
   email: string;
   password: string;
-  name: string;
-  phone?: string;
-  role: 'TEACHER' | 'STUDENT' | 'PARENT';
-  roleDetail?: Record<string, unknown>;
+}
+
+export interface PasswordResetRequest {
+  phone: string;
+}
+
+export interface PasswordResetConfirmRequest {
+  phone: string;
+  otpCode: string;
+  newPassword: string;
 }
 
 export interface TokenResponse {
@@ -26,8 +39,33 @@ export interface UserInfo {
   id: number;
   email: string;
   name: string;
-  role: 'TEACHER' | 'STUDENT' | 'PARENT';
+  role: 'ADMIN' | 'TEACHER' | 'STUDENT' | 'PARENT';
   roleEntityId?: number;
+  roleDetail?: {
+    // TEACHER
+    department?: string;
+    currentClass?: {
+      academicYear: number;
+      grade: number;
+      classNum: number;
+      isHomeroom: boolean;
+    };
+    assignments?: Array<{
+      grade: number;
+      classNum: number;
+      subject: string;
+      academicYear: number;
+    }>;
+    // STUDENT
+    currentEnrollment?: {
+      academicYear: number;
+      grade: number;
+      classNum: number;
+      studentNum: number;
+    };
+    // PARENT
+    children?: Array<{ id: number; name: string }>;
+  };
 }
 
 export interface ApiResponse<T> {
@@ -37,9 +75,22 @@ export interface ApiResponse<T> {
 }
 
 const authService = {
-  async signup(request: SignupRequest): Promise<UserInfo> {
-    const { data } = await api.post<ApiResponse<UserInfo>>('/auth/signup', request);
-    return data.data;
+  async sendOtp(phone: string, purpose: 'ACTIVATE' | 'PW_RESET'): Promise<void> {
+    await api.post('/auth/otp/send', { phone, purpose });
+  },
+
+  async activate(phone: string, otpCode: string, email: string, password: string): Promise<void> {
+    await api.post('/auth/activate', { phone, otpCode, email, password } as ActivateRequest);
+  },
+
+  async requestPasswordReset(phone: string): Promise<void> {
+    await api.post('/auth/password/reset/request', { phone } as PasswordResetRequest);
+  },
+
+  async confirmPasswordReset(phone: string, otpCode: string, newPassword: string): Promise<void> {
+    await api.post('/auth/password/reset/confirm', {
+      phone, otpCode, newPassword,
+    } as PasswordResetConfirmRequest);
   },
 
   async login(request: LoginRequest): Promise<TokenResponse> {
@@ -48,7 +99,8 @@ const authService = {
   },
 
   async logout(): Promise<void> {
-    await api.post('/auth/logout');
+    const refreshToken = localStorage.getItem('refreshToken');
+    await api.post('/auth/logout', { refreshToken }).catch(() => {});
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
@@ -65,7 +117,7 @@ const authService = {
 
   getStoredUser(): UserInfo | null {
     const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+    return user ? (JSON.parse(user) as UserInfo) : null;
   },
 };
 
