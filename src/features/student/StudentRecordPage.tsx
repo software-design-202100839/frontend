@@ -2,18 +2,28 @@ import { useState, useEffect, useCallback } from 'react';
 import gradeService from '../../services/gradeService';
 import studentService from '../../services/studentService';
 import type { StudentInfo } from '../../services/gradeService';
+import type { Subject } from '../../services/gradeService';
 import { formatStudentLabel } from '../../types/student';
-import type { StudentRecord, RecordCategory } from '../../services/studentService';
+import type {
+  StudentRecord,
+  RecordType,
+  BasicCategory,
+  SpecialCategory,
+  RecordCategory,
+} from '../../services/studentService';
 import authService from '../../services/authService';
 import RecordForm from './RecordForm';
 
-const categories: RecordCategory[] = ['ATTENDANCE', 'SPECIAL_NOTE', 'AWARD', 'VOLUNTEER', 'OTHER'];
+const basicCategories: BasicCategory[] = ['ATTENDANCE', 'GENERAL_OPINION', 'AWARD', 'VOLUNTEER'];
+const specialCategories: SpecialCategory[] = ['SPECIAL_NOTE'];
 
 function StudentRecordPage() {
   const [students, setStudents] = useState<StudentInfo[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [year, setYear] = useState(2026);
   const [semester, setSemester] = useState(1);
+  const [recordType, setRecordType] = useState<RecordType | ''>('');
   const [categoryFilter, setCategoryFilter] = useState<RecordCategory | ''>('');
   const [records, setRecords] = useState<StudentRecord[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -25,10 +35,18 @@ function StudentRecordPage() {
   useEffect(() => {
     if (isTeacher) {
       gradeService.getStudents().then(setStudents);
+      gradeService.getSubjects().then(setSubjects);
     } else if (user?.roleEntityId) {
       setSelectedStudentId(user.roleEntityId);
     }
   }, []);
+
+  const availableCategories: RecordCategory[] =
+    recordType === 'BASIC'
+      ? basicCategories
+      : recordType === 'SPECIAL'
+        ? specialCategories
+        : [...basicCategories, ...specialCategories];
 
   const loadRecords = useCallback(async () => {
     if (!selectedStudentId) {
@@ -41,6 +59,7 @@ function StudentRecordPage() {
         year,
         semester,
         categoryFilter || undefined,
+        recordType || undefined,
       );
       setRecords(data);
     } catch {
@@ -48,13 +67,13 @@ function StudentRecordPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedStudentId, year, semester, categoryFilter]);
+  }, [selectedStudentId, year, semester, categoryFilter, recordType]);
 
   useEffect(() => {
     if (selectedStudentId) {
       loadRecords();
     }
-  }, [selectedStudentId, year, semester, categoryFilter, loadRecords]);
+  }, [selectedStudentId, year, semester, categoryFilter, recordType, loadRecords]);
 
   const handleCreated = () => {
     setShowForm(false);
@@ -67,6 +86,11 @@ function StudentRecordPage() {
     }
     await studentService.deleteRecord(recordId);
     loadRecords();
+  };
+
+  const handleRecordTypeChange = (newType: RecordType | '') => {
+    setRecordType(newType);
+    setCategoryFilter('');
   };
 
   const selectedStudent = students.find((s) => s.id === selectedStudentId);
@@ -83,7 +107,7 @@ function StudentRecordPage() {
       </div>
 
       {showForm && selectedStudentId && (
-        <RecordForm studentId={selectedStudentId} onSuccess={handleCreated} />
+        <RecordForm studentId={selectedStudentId} subjects={subjects} onSuccess={handleCreated} />
       )}
 
       <div style={styles.filterRow}>
@@ -124,12 +148,22 @@ function StudentRecordPage() {
         </select>
 
         <select
+          value={recordType}
+          onChange={(e) => handleRecordTypeChange(e.target.value as RecordType | '')}
+          style={styles.select}
+        >
+          <option value="">전체 구분</option>
+          <option value="BASIC">담임</option>
+          <option value="SPECIAL">교과</option>
+        </select>
+
+        <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value as RecordCategory | '')}
           style={styles.select}
         >
           <option value="">전체 카테고리</option>
-          {categories.map((c) => (
+          {availableCategories.map((c) => (
             <option key={c} value={c}>
               {studentService.categoryLabels[c]}
             </option>
@@ -152,17 +186,36 @@ function StudentRecordPage() {
       {records.map((record) => (
         <div key={record.id} style={styles.recordCard}>
           <div style={styles.recordHeader}>
+            <span style={record.recordType === 'BASIC' ? styles.basicBadge : styles.specialBadge}>
+              {studentService.recordTypeLabels[record.recordType]}
+            </span>
             <span style={styles.badge}>{studentService.categoryLabels[record.category]}</span>
+            {record.subjectName && <span style={styles.subject}>{record.subjectName}</span>}
             <span style={styles.date}>
               {new Date(record.updatedAt).toLocaleDateString('ko-KR')}
             </span>
+            <div style={styles.visibilityTags}>
+              <span style={record.isVisibleToStudent ? styles.visibleTag : styles.hiddenTag}>
+                학생 {record.isVisibleToStudent ? '공개' : '비공개'}
+              </span>
+              <span style={record.isVisibleToParent ? styles.visibleTag : styles.hiddenTag}>
+                학부모 {record.isVisibleToParent ? '공개' : '비공개'}
+              </span>
+            </div>
             {isTeacher && (
-              <button onClick={() => handleDelete(record.id)} style={styles.deleteButton}>
+              <button
+                onClick={() => handleDelete(record.id)}
+                style={styles.deleteButton}
+              >
                 삭제
               </button>
             )}
           </div>
-          <pre style={styles.content}>{JSON.stringify(record.content, null, 2)}</pre>
+          <p style={styles.content}>
+            {typeof record.content.text === 'string'
+              ? record.content.text
+              : JSON.stringify(record.content, null, 2)}
+          </p>
         </div>
       ))}
     </div>
@@ -216,8 +269,25 @@ const styles: Record<string, React.CSSProperties> = {
   recordHeader: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
+    gap: '8px',
     marginBottom: '8px',
+    flexWrap: 'wrap' as const,
+  },
+  basicBadge: {
+    padding: '2px 8px',
+    backgroundColor: '#e6f7e6',
+    color: '#52c41a',
+    borderRadius: '4px',
+    fontSize: '11px',
+    fontWeight: 'bold',
+  },
+  specialBadge: {
+    padding: '2px 8px',
+    backgroundColor: '#fff7e6',
+    color: '#fa8c16',
+    borderRadius: '4px',
+    fontSize: '11px',
+    fontWeight: 'bold',
   },
   badge: {
     padding: '2px 8px',
@@ -227,7 +297,23 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '12px',
     fontWeight: 'bold',
   },
+  subject: { fontSize: '12px', color: '#555' },
   date: { fontSize: '12px', color: '#999' },
+  visibilityTags: { display: 'flex', gap: '4px' },
+  visibleTag: {
+    padding: '2px 6px',
+    backgroundColor: '#e6f7e6',
+    color: '#52c41a',
+    borderRadius: '4px',
+    fontSize: '11px',
+  },
+  hiddenTag: {
+    padding: '2px 6px',
+    backgroundColor: '#f5f5f5',
+    color: '#999',
+    borderRadius: '4px',
+    fontSize: '11px',
+  },
   deleteButton: {
     marginLeft: 'auto',
     padding: '4px 8px',
@@ -240,12 +326,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   content: {
     margin: 0,
-    padding: '12px',
-    backgroundColor: '#f8f9fa',
-    borderRadius: '4px',
-    fontSize: '13px',
+    fontSize: '14px',
+    lineHeight: '1.6',
+    color: '#333',
     whiteSpace: 'pre-wrap',
-    overflow: 'auto',
   },
 };
 
