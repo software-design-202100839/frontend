@@ -20,7 +20,7 @@ function GradePage() {
   const isTeacher = user?.role === 'TEACHER';
   const isStudent = user?.role === 'STUDENT';
   const isParent = user?.role === 'PARENT';
-  const children = user?.roleDetail?.children ?? [];
+  const children = user?.children ?? [];
 
   useEffect(() => {
     gradeService.getSubjects().then(setSubjects);

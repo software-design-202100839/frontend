@@ -30,7 +30,7 @@ function FeedbackPage() {
   const isTeacher = user?.role === 'TEACHER';
 
   const isParent = user?.role === 'PARENT';
-  const children = user?.roleDetail?.children ?? [];
+  const children = user?.children ?? [];
 
   useEffect(() => {
     if (isTeacher) {
