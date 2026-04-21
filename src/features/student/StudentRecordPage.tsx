@@ -31,13 +31,17 @@ function StudentRecordPage() {
 
   const user = authService.getStoredUser();
   const isTeacher = user?.role === 'TEACHER';
+  const isParent = user?.role === 'PARENT';
+  const children = user?.children ?? [];
 
   useEffect(() => {
     if (isTeacher) {
       gradeService.getStudents().then(setStudents);
       gradeService.getSubjects().then(setSubjects);
-    } else if (user?.roleEntityId) {
+    } else if (user?.role === 'STUDENT' && user?.roleEntityId) {
       setSelectedStudentId(user.roleEntityId);
+    } else if (isParent && children.length > 0) {
+      setSelectedStudentId(children[0].id);
     }
   }, []);
 
@@ -126,6 +130,20 @@ function StudentRecordPage() {
           </select>
         )}
 
+        {isParent && children.length > 1 && (
+          <select
+            value={selectedStudentId ?? ''}
+            onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)}
+            style={styles.select}
+          >
+            {children.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        )}
+
         <select
           value={year}
           onChange={(e) => setYear(Number(e.target.value))}
@@ -194,14 +212,16 @@ function StudentRecordPage() {
             <span style={styles.date}>
               {new Date(record.updatedAt).toLocaleDateString('ko-KR')}
             </span>
-            <div style={styles.visibilityTags}>
-              <span style={record.isVisibleToStudent ? styles.visibleTag : styles.hiddenTag}>
-                학생 {record.isVisibleToStudent ? '공개' : '비공개'}
-              </span>
-              <span style={record.isVisibleToParent ? styles.visibleTag : styles.hiddenTag}>
-                학부모 {record.isVisibleToParent ? '공개' : '비공개'}
-              </span>
-            </div>
+            {isTeacher && (
+              <div style={styles.visibilityTags}>
+                <span style={record.isVisibleToStudent ? styles.visibleTag : styles.hiddenTag}>
+                  학생 {record.isVisibleToStudent ? '공개' : '비공개'}
+                </span>
+                <span style={record.isVisibleToParent ? styles.visibleTag : styles.hiddenTag}>
+                  학부모 {record.isVisibleToParent ? '공개' : '비공개'}
+                </span>
+              </div>
+            )}
             {isTeacher && (
               <button
                 onClick={() => handleDelete(record.id)}
