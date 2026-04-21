@@ -97,6 +97,41 @@ export interface EnrollStudentRequest {
   studentNum: number;
 }
 
+// ─── 과목 배정 ────────────────────────────────────────────
+
+export interface AssignmentTeacherInfo {
+  id: number;
+  name: string;
+  department: string | null;
+}
+
+export interface AssignmentClassInfo {
+  id: number;
+  grade: number;
+  classNum: number;
+}
+
+export interface AssignmentSubjectInfo {
+  id: number;
+  name: string;
+  code: string;
+}
+
+export interface AssignmentSummary {
+  id: number;
+  teacher: AssignmentTeacherInfo;
+  classInfo: AssignmentClassInfo;
+  subject: AssignmentSubjectInfo;
+  academicYear: number;
+}
+
+export interface CreateAssignmentRequest {
+  teacherId: number;
+  classId: number;
+  subjectId: number;
+  academicYear: number;
+}
+
 // ─── API ─────────────────────────────────────────────────
 
 interface Page<T> {
@@ -142,6 +177,16 @@ const adminService = {
 
   enrollStudent: (classId: number, req: EnrollStudentRequest) =>
     api.post<ApiResponse<void>>(`/admin/classes/${classId}/students`, req),
+
+  // 과목 배정
+  getAssignments: (academicYear: number) =>
+    api.get<ApiResponse<AssignmentSummary[]>>(`/admin/assignments?academicYear=${academicYear}`).then(r => r.data.data!),
+
+  createAssignment: (req: CreateAssignmentRequest) =>
+    api.post<ApiResponse<AssignmentSummary>>('/admin/assignments', req).then(r => r.data.data!),
+
+  deleteAssignment: (assignmentId: number) =>
+    api.delete<ApiResponse<void>>(`/admin/assignments/${assignmentId}`),
 };
 
 export default adminService;

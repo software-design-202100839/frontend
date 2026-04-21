@@ -4,9 +4,19 @@ import adminService, {
   type StudentSummary,
   type ParentSummary,
   type ClassSummary,
+  type AssignmentSummary,
 } from '../../services/adminService';
+import gradeService, { type Subject } from '../../services/gradeService';
 
-type Tab = 'teachers' | 'students' | 'parents' | 'classes';
+type Tab = 'teachers' | 'students' | 'parents' | 'classes' | 'assignments';
+
+const TAB_LABEL: Record<Tab, string> = {
+  teachers: '교사',
+  students: '학생',
+  parents: '학부모',
+  classes: '반 관리',
+  assignments: '과목 배정',
+};
 
 export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('teachers');
@@ -15,21 +25,22 @@ export default function AdminPage() {
     <div>
       <h2 style={s.pageTitle}>관리자</h2>
       <div style={s.tabs}>
-        {(['teachers', 'students', 'parents', 'classes'] as Tab[]).map(t => (
+        {(Object.keys(TAB_LABEL) as Tab[]).map(t => (
           <button
             key={t}
             style={{ ...s.tab, ...(tab === t ? s.tabActive : {}) }}
             onClick={() => setTab(t)}
           >
-            {{ teachers: '교사', students: '학생', parents: '학부모', classes: '반 관리' }[t]}
+            {TAB_LABEL[t]}
           </button>
         ))}
       </div>
       <div style={s.content}>
-        {tab === 'teachers' && <TeachersTab />}
-        {tab === 'students' && <StudentsTab />}
-        {tab === 'parents' && <ParentsTab />}
-        {tab === 'classes' && <ClassesTab />}
+        {tab === 'teachers'    && <TeachersTab />}
+        {tab === 'students'    && <StudentsTab />}
+        {tab === 'parents'     && <ParentsTab />}
+        {tab === 'classes'     && <ClassesTab />}
+        {tab === 'assignments' && <AssignmentsTab />}
       </div>
     </div>
   );
@@ -413,6 +424,128 @@ function ClassesTab() {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+// ─── 과목 배정 탭 ─────────────────────────────────────────
+
+function AssignmentsTab() {
+  const year = new Date().getFullYear();
+  const [assignments, setAssignments] = useState<AssignmentSummary[]>([]);
+  const [teachers, setTeachers]       = useState<TeacherSummary[]>([]);
+  const [classes, setClasses]         = useState<ClassSummary[]>([]);
+  const [subjects, setSubjects]       = useState<Subject[]>([]);
+
+  const [teacherId, setTeacherId] = useState('');
+  const [classId, setClassId]     = useState('');
+  const [subjectId, setSubjectId] = useState('');
+  const [error, setError]         = useState('');
+  const [loading, setLoading]     = useState(false);
+
+  const load = useCallback(() => Promise.all([
+    adminService.getAssignments(year).then(setAssignments),
+    adminService.getTeachers().then(setTeachers),
+    adminService.getClasses(year).then(setClasses),
+    gradeService.getSubjects().then(setSubjects),
+  ]), [year]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    setError(''); setLoading(true);
+    try {
+      await adminService.createAssignment({
+        teacherId: Number(teacherId),
+        classId: Number(classId),
+        subjectId: Number(subjectId),
+        academicYear: year,
+      });
+      setTeacherId(''); setClassId(''); setSubjectId('');
+      load();
+    } catch (err: unknown) {
+      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? '배정 실패');
+    } finally { setLoading(false); }
+  }
+
+  async function handleDelete(assignmentId: number) {
+    if (!confirm('이 과목 배정을 삭제하시겠습니까?')) return;
+    try {
+      await adminService.deleteAssignment(assignmentId);
+      load();
+    } catch {
+      alert('삭제 실패');
+    }
+  }
+
+  return (
+    <div>
+      <div style={s.twoCol}>
+        <div>
+          <h3 style={s.sectionTitle}>교사 과목 배정 ({year}학년도)</h3>
+          <form onSubmit={handleCreate}>
+            <label style={s.label}>교사 선택</label>
+            <select style={s.select} value={teacherId} onChange={e => setTeacherId(e.target.value)} required>
+              <option value="">-- 교사 선택 --</option>
+              {teachers.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.name}{t.department ? ` (${t.department})` : ''}
+                </option>
+              ))}
+            </select>
+
+            <label style={s.label}>반 선택</label>
+            <select style={s.select} value={classId} onChange={e => setClassId(e.target.value)} required>
+              <option value="">-- 반 선택 --</option>
+              {classes.map(c => (
+                <option key={c.id} value={c.id}>{c.grade}학년 {c.classNum}반</option>
+              ))}
+            </select>
+
+            <label style={s.label}>과목 선택</label>
+            <select style={s.select} value={subjectId} onChange={e => setSubjectId(e.target.value)} required>
+              <option value="">-- 과목 선택 --</option>
+              {subjects.map(sub => (
+                <option key={sub.id} value={sub.id}>{sub.name} ({sub.code})</option>
+              ))}
+            </select>
+
+            {error && <p style={s.error}>{error}</p>}
+            <button style={s.btn} disabled={loading}>{loading ? '처리 중...' : '배정'}</button>
+          </form>
+        </div>
+        <div>
+          <h3 style={s.sectionTitle}>배정 현황</h3>
+          <table style={s.table}>
+            <thead><tr>
+              <Th>교사</Th><Th>반</Th><Th>과목</Th><Th>삭제</Th>
+            </tr></thead>
+            <tbody>
+              {assignments.length === 0 && (
+                <tr><td colSpan={4} style={{ ...s.td, color: '#999', textAlign: 'center' }}>배정 내역 없음</td></tr>
+              )}
+              {assignments
+                .sort((a, b) => a.classInfo.grade - b.classInfo.grade || a.classInfo.classNum - b.classInfo.classNum)
+                .map(a => (
+                  <tr key={a.id}>
+                    <Td>{a.teacher.name}{a.teacher.department ? ` (${a.teacher.department})` : ''}</Td>
+                    <Td>{a.classInfo.grade}학년 {a.classInfo.classNum}반</Td>
+                    <Td>{a.subject.name}</Td>
+                    <Td>
+                      <button
+                        onClick={() => handleDelete(a.id)}
+                        style={{ ...s.btn, backgroundColor: '#d32f2f', padding: '4px 10px', fontSize: 12 }}
+                      >
+                        삭제
+                      </button>
+                    </Td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
