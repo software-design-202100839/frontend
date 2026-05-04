@@ -9,9 +9,27 @@ function StudentDashboardPage() {
   const enrollment = user?.roleDetail?.currentEnrollment;
 
   const cards = [
-    { path: '/grades', icon: BookOpen, title: '내 성적', desc: '과목별 성적 및 등급 조회', color: 'text-blue-600' },
-    { path: '/feedbacks', icon: MessageSquare, title: '내 피드백', desc: '선생님이 남긴 피드백 확인', color: 'text-violet-600' },
-    { path: '/notifications', icon: Bell, title: '알림', desc: '성적 및 피드백 알림 확인', color: 'text-amber-600' },
+    {
+      path: '/grades',
+      icon: BookOpen,
+      title: '내 성적',
+      desc: '과목별 성적 및 등급 조회',
+      color: 'text-blue-600',
+    },
+    {
+      path: '/feedbacks',
+      icon: MessageSquare,
+      title: '내 피드백',
+      desc: '선생님이 남긴 피드백 확인',
+      color: 'text-violet-600',
+    },
+    {
+      path: '/notifications',
+      icon: Bell,
+      title: '알림',
+      desc: '성적 및 피드백 알림 확인',
+      color: 'text-amber-600',
+    },
   ];
 
   return (
@@ -22,7 +40,9 @@ function StudentDashboardPage() {
           <p className="text-muted-foreground">환영합니다, {user?.name}님.</p>
         </div>
         {enrollment && (
-          <Badge variant="secondary" className="text-sm">{enrollment.grade}학년 {enrollment.classNum}반 {enrollment.studentNum}번</Badge>
+          <Badge variant="secondary" className="text-sm">
+            {enrollment.grade}학년 {enrollment.classNum}반 {enrollment.studentNum}번
+          </Badge>
         )}
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

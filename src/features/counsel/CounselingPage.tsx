@@ -93,7 +93,9 @@ function CounselingPage() {
   };
 
   const handleSearch = async () => {
-    if (!selectedStudentId || !searchStartDate || !searchEndDate) return;
+    if (!selectedStudentId || !searchStartDate || !searchEndDate) {
+      return;
+    }
     setLoading(true);
     try {
       const data = await counselService.searchCounselings(
@@ -128,7 +130,13 @@ function CounselingPage() {
             onClick={() => (showForm ? handleCancel() : setShowForm(true))}
             variant={showForm ? 'outline' : 'default'}
           >
-            {showForm ? '취소' : <><Plus className="h-4 w-4" /> 상담 기록</>}
+            {showForm ? (
+              '취소'
+            ) : (
+              <>
+                <Plus className="h-4 w-4" /> 상담 기록
+              </>
+            )}
           </Button>
         )}
       </div>
@@ -138,14 +146,27 @@ function CounselingPage() {
       )}
 
       <div className="flex flex-wrap gap-3">
-        <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value as CounselCategory | '')} className="w-auto">
+        <Select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value as CounselCategory | '')}
+          className="w-auto"
+        >
           <option value="">전체 카테고리</option>
-          {categories.map((c) => <option key={c} value={c}>{counselService.categoryLabels[c]}</option>)}
+          {categories.map((c) => (
+            <option key={c} value={c}>
+              {counselService.categoryLabels[c]}
+            </option>
+          ))}
         </Select>
       </div>
 
       {isTeacher && (
-        <StudentSelector students={students} selectedStudentId={selectedStudentId} year={CURRENT_YEAR} onSelect={setSelectedStudentId} />
+        <StudentSelector
+          students={students}
+          selectedStudentId={selectedStudentId}
+          year={CURRENT_YEAR}
+          onSelect={setSelectedStudentId}
+        />
       )}
 
       {canSearch && selectedStudentId && (
@@ -163,11 +184,7 @@ function CounselingPage() {
             onChange={(e) => setSearchEndDate(e.target.value)}
             className="w-auto"
           />
-          <Button
-            onClick={handleSearch}
-            disabled={!searchStartDate || !searchEndDate}
-            size="sm"
-          >
+          <Button onClick={handleSearch} disabled={!searchStartDate || !searchEndDate} size="sm">
             <Search className="h-4 w-4" /> 기간 검색
           </Button>
           {isSearchMode && (
@@ -217,7 +234,9 @@ function CounselingPage() {
                 </div>
               )}
               {c.nextCounselDate && (
-                <p className="text-xs font-semibold text-primary">다음 상담 예정: {c.nextCounselDate}</p>
+                <p className="text-xs font-semibold text-primary">
+                  다음 상담 예정: {c.nextCounselDate}
+                </p>
               )}
             </CardContent>
           </Card>

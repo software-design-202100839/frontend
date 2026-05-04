@@ -95,22 +95,41 @@ function FeedbackForm({ students, editTarget, onSuccess }: Props) {
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {!isEdit && (
-              <Select value={studentId} onChange={(e) => setStudentId(Number(e.target.value) || '')}>
+              <Select
+                value={studentId}
+                onChange={(e) => setStudentId(Number(e.target.value) || '')}
+              >
                 <option value="">학생 선택</option>
                 {students.map((s) => (
-                  <option key={s.id} value={s.id}>{formatStudentLabel(s, CURRENT_YEAR)}</option>
+                  <option key={s.id} value={s.id}>
+                    {formatStudentLabel(s, CURRENT_YEAR)}
+                  </option>
                 ))}
               </Select>
             )}
             <Select value={year.toString()} onChange={(e) => setYear(Number(e.target.value))}>
-              {[2024, 2025, 2026].map((y) => <option key={y} value={y}>{y}년</option>)}
+              {[2024, 2025, 2026].map((y) => (
+                <option key={y} value={y}>
+                  {y}년
+                </option>
+              ))}
             </Select>
-            <Select value={semester.toString()} onChange={(e) => setSemester(Number(e.target.value))}>
+            <Select
+              value={semester.toString()}
+              onChange={(e) => setSemester(Number(e.target.value))}
+            >
               <option value={1}>1학기</option>
               <option value={2}>2학기</option>
             </Select>
-            <Select value={category} onChange={(e) => setCategory(e.target.value as FeedbackCategory)}>
-              {categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+            <Select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as FeedbackCategory)}
+            >
+              {categories.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
             </Select>
           </div>
 

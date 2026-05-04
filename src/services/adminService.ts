@@ -143,34 +143,42 @@ interface Page<T> {
 const adminService = {
   // 교사
   getTeachers: () =>
-    api.get<ApiResponse<Page<TeacherSummary>>>('/admin/teachers?size=100').then(r => r.data.data!.content),
+    api
+      .get<ApiResponse<Page<TeacherSummary>>>('/admin/teachers?size=100')
+      .then((r) => r.data.data!.content),
 
   registerTeacher: (req: RegisterTeacherRequest) =>
-    api.post<ApiResponse<TeacherSummary>>('/admin/teachers', req).then(r => r.data.data!),
+    api.post<ApiResponse<TeacherSummary>>('/admin/teachers', req).then((r) => r.data.data!),
 
   // 학생
   getStudents: () =>
-    api.get<ApiResponse<Page<StudentSummary>>>('/admin/students?size=100').then(r => r.data.data!.content),
+    api
+      .get<ApiResponse<Page<StudentSummary>>>('/admin/students?size=100')
+      .then((r) => r.data.data!.content),
 
   registerStudent: (req: RegisterStudentRequest) =>
-    api.post<ApiResponse<StudentSummary>>('/admin/students', req).then(r => r.data.data!),
+    api.post<ApiResponse<StudentSummary>>('/admin/students', req).then((r) => r.data.data!),
 
   linkParentChild: (studentId: number, req: LinkParentChildRequest) =>
     api.post<ApiResponse<void>>(`/admin/students/${studentId}/parents`, req),
 
   // 학부모
   getParents: () =>
-    api.get<ApiResponse<Page<ParentSummary>>>('/admin/parents?size=100').then(r => r.data.data!.content),
+    api
+      .get<ApiResponse<Page<ParentSummary>>>('/admin/parents?size=100')
+      .then((r) => r.data.data!.content),
 
   registerParent: (req: RegisterParentRequest) =>
-    api.post<ApiResponse<ParentSummary>>('/admin/parents', req).then(r => r.data.data!),
+    api.post<ApiResponse<ParentSummary>>('/admin/parents', req).then((r) => r.data.data!),
 
   // 반
   getClasses: (academicYear: number) =>
-    api.get<ApiResponse<ClassSummary[]>>(`/admin/classes?academicYear=${academicYear}`).then(r => r.data.data!),
+    api
+      .get<ApiResponse<ClassSummary[]>>(`/admin/classes?academicYear=${academicYear}`)
+      .then((r) => r.data.data!),
 
   createClass: (req: CreateClassRequest) =>
-    api.post<ApiResponse<ClassSummary>>('/admin/classes', req).then(r => r.data.data!),
+    api.post<ApiResponse<ClassSummary>>('/admin/classes', req).then((r) => r.data.data!),
 
   assignHomeroom: (classId: number, teacherId: number) =>
     api.put<ApiResponse<void>>(`/admin/classes/${classId}/homeroom`, { teacherId }),
@@ -180,10 +188,12 @@ const adminService = {
 
   // 과목 배정
   getAssignments: (academicYear: number) =>
-    api.get<ApiResponse<AssignmentSummary[]>>(`/admin/assignments?academicYear=${academicYear}`).then(r => r.data.data!),
+    api
+      .get<ApiResponse<AssignmentSummary[]>>(`/admin/assignments?academicYear=${academicYear}`)
+      .then((r) => r.data.data!),
 
   createAssignment: (req: CreateAssignmentRequest) =>
-    api.post<ApiResponse<AssignmentSummary>>('/admin/assignments', req).then(r => r.data.data!),
+    api.post<ApiResponse<AssignmentSummary>>('/admin/assignments', req).then((r) => r.data.data!),
 
   deleteAssignment: (assignmentId: number) =>
     api.delete<ApiResponse<void>>(`/admin/assignments/${assignmentId}`),

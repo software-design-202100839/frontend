@@ -1,4 +1,12 @@
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip } from 'recharts';
+import {
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts';
 import type { ScoreResponse } from '../../services/gradeService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -7,7 +15,9 @@ interface Props {
 }
 
 function ScoreRadarChart({ scores }: Props) {
-  if (scores.length === 0) return null;
+  if (scores.length === 0) {
+    return null;
+  }
 
   const chartData = scores.map((s) => ({ subject: s.subjectName, score: s.score, fullMark: 100 }));
 

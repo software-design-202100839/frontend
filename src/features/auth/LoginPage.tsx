@@ -6,7 +6,14 @@ import authService from '../../services/authService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -91,11 +98,17 @@ function LoginPage() {
         </CardContent>
 
         <CardFooter className="justify-center gap-4 text-sm">
-          <Link to="/activate" className="text-muted-foreground hover:text-primary transition-colors">
+          <Link
+            to="/activate"
+            className="text-muted-foreground hover:text-primary transition-colors"
+          >
             계정 활성화
           </Link>
           <span className="text-border">|</span>
-          <Link to="/reset-password" className="text-muted-foreground hover:text-primary transition-colors">
+          <Link
+            to="/reset-password"
+            className="text-muted-foreground hover:text-primary transition-colors"
+          >
             비밀번호 찾기
           </Link>
         </CardFooter>

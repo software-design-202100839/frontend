@@ -88,7 +88,9 @@ const authService = {
 
   async confirmPasswordReset(phone: string, otpCode: string, newPassword: string): Promise<void> {
     await api.post('/auth/password/reset/confirm', {
-      phone, otpCode, newPassword,
+      phone,
+      otpCode,
+      newPassword,
     } as PasswordResetConfirmRequest);
   },
 

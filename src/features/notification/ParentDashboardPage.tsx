@@ -15,7 +15,7 @@ function ParentDashboardPage() {
   const user = authService.getStoredUser();
   const children = user?.children ?? [];
   const [selectedChildId, setSelectedChildId] = useState<number | null>(
-    children.length > 0 ? children[0].id : null
+    children.length > 0 ? children[0].id : null,
   );
   const [recentNotifications, setRecentNotifications] = useState<NotificationResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +34,7 @@ function ParentDashboardPage() {
     load();
   }, []);
 
-  const selectedChild = children.find(c => c.id === selectedChildId);
+  const selectedChild = children.find((c) => c.id === selectedChildId);
   const scoreNotifications = recentNotifications.filter((n) => n.type === 'SCORE_UPDATE');
   const feedbackNotifications = recentNotifications.filter((n) => n.type === 'FEEDBACK_NEW');
 
@@ -52,11 +52,13 @@ function ParentDashboardPage() {
             <label className="text-sm font-semibold whitespace-nowrap">자녀 선택</label>
             <Select
               value={selectedChildId ?? ''}
-              onChange={e => setSelectedChildId(Number(e.target.value))}
+              onChange={(e) => setSelectedChildId(Number(e.target.value))}
               className="w-auto min-w-[160px]"
             >
-              {children.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+              {children.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </Select>
           </CardContent>
@@ -115,7 +117,9 @@ function ParentDashboardPage() {
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-muted-foreground">성적 알림</CardTitle>
+                <CardTitle className="text-sm font-semibold text-muted-foreground">
+                  성적 알림
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {loading ? (
@@ -123,7 +127,10 @@ function ParentDashboardPage() {
                 ) : scoreNotifications.length > 0 ? (
                   <div className="space-y-1">
                     {scoreNotifications.map((n) => (
-                      <div key={n.id} className="flex items-center justify-between border-b border-border/50 py-1.5 last:border-0">
+                      <div
+                        key={n.id}
+                        className="flex items-center justify-between border-b border-border/50 py-1.5 last:border-0"
+                      >
                         <span className="text-sm">{n.title}</span>
                         <span className="text-xs text-muted-foreground">
                           {new Date(n.createdAt).toLocaleDateString('ko-KR')}
@@ -139,7 +146,9 @@ function ParentDashboardPage() {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-muted-foreground">피드백 알림</CardTitle>
+                <CardTitle className="text-sm font-semibold text-muted-foreground">
+                  피드백 알림
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {loading ? (
@@ -147,7 +156,10 @@ function ParentDashboardPage() {
                 ) : feedbackNotifications.length > 0 ? (
                   <div className="space-y-1">
                     {feedbackNotifications.map((n) => (
-                      <div key={n.id} className="flex items-center justify-between border-b border-border/50 py-1.5 last:border-0">
+                      <div
+                        key={n.id}
+                        className="flex items-center justify-between border-b border-border/50 py-1.5 last:border-0"
+                      >
                         <span className="text-sm">{n.title}</span>
                         <span className="text-xs text-muted-foreground">
                           {new Date(n.createdAt).toLocaleDateString('ko-KR')}
@@ -170,10 +182,7 @@ function ParentDashboardPage() {
 
         <div className="space-y-2">
           {recentNotifications.map((n) => (
-            <Card
-              key={n.id}
-              className={cn(!n.isRead && 'border-blue-200 bg-blue-50/50')}
-            >
+            <Card key={n.id} className={cn(!n.isRead && 'border-blue-200 bg-blue-50/50')}>
               <CardContent className="p-4">
                 <div className="mb-1 flex items-center gap-2.5">
                   <Badge variant="secondary">{typeLabels[n.type]}</Badge>

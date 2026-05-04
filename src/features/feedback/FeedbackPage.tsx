@@ -114,7 +114,13 @@ function FeedbackPage() {
             onClick={() => (showForm ? handleCancel() : setShowForm(true))}
             variant={showForm ? 'outline' : 'default'}
           >
-            {showForm ? '취소' : <><Plus className="h-4 w-4" /> 피드백 작성</>}
+            {showForm ? (
+              '취소'
+            ) : (
+              <>
+                <Plus className="h-4 w-4" /> 피드백 작성
+              </>
+            )}
           </Button>
         )}
       </div>
@@ -124,18 +130,39 @@ function FeedbackPage() {
       )}
 
       <div className="flex flex-wrap gap-3">
-        <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value as FeedbackCategory | '')} className="w-auto">
+        <Select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value as FeedbackCategory | '')}
+          className="w-auto"
+        >
           <option value="">전체 카테고리</option>
-          {categories.map((c) => <option key={c} value={c}>{feedbackService.categoryLabels[c]}</option>)}
+          {categories.map((c) => (
+            <option key={c} value={c}>
+              {feedbackService.categoryLabels[c]}
+            </option>
+          ))}
         </Select>
       </div>
 
       {isTeacher && (
-        <StudentSelector students={students} selectedStudentId={selectedStudentId} year={CURRENT_YEAR} onSelect={setSelectedStudentId} />
+        <StudentSelector
+          students={students}
+          selectedStudentId={selectedStudentId}
+          year={CURRENT_YEAR}
+          onSelect={setSelectedStudentId}
+        />
       )}
       {isParent && children.length > 1 && (
-        <Select value={selectedStudentId ?? ''} onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)} className="w-40">
-          {children.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        <Select
+          value={selectedStudentId ?? ''}
+          onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)}
+          className="w-40"
+        >
+          {children.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
         </Select>
       )}
 
@@ -156,9 +183,7 @@ function FeedbackPage() {
           <Card key={fb.id}>
             <CardContent className="p-4">
               <div className="mb-2 flex items-center gap-3">
-                <Badge variant="secondary">
-                  {feedbackService.categoryLabels[fb.category]}
-                </Badge>
+                <Badge variant="secondary">{feedbackService.categoryLabels[fb.category]}</Badge>
                 <span className="text-[13px] text-muted-foreground">{fb.teacherName}</span>
                 <span className="text-xs text-muted-foreground">
                   {new Date(fb.updatedAt).toLocaleDateString('ko-KR')}

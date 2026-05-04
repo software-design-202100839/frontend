@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 const API_BASE = (process.env.BASE_URL || 'http://localhost:8080') + '/api/v1';
 

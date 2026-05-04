@@ -9,7 +9,14 @@ import StudentSelector from '@/components/StudentSelector';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 function GradePage() {
   const [students, setStudents] = useState<StudentInfo[]>([]);
@@ -39,19 +46,30 @@ function GradePage() {
   }, []);
 
   const loadScores = useCallback(async () => {
-    if (!selectedStudentId) return;
+    if (!selectedStudentId) {
+      return;
+    }
     setLoading(true);
     try {
       const data = await gradeService.getStudentScores(selectedStudentId, year, semester);
       setSummary(data);
-    } catch { setSummary(null); }
-    finally { setLoading(false); }
+    } catch {
+      setSummary(null);
+    } finally {
+      setLoading(false);
+    }
   }, [selectedStudentId, year, semester]);
 
-  useEffect(() => { if (selectedStudentId) loadScores(); }, [selectedStudentId, year, semester, loadScores]);
+  useEffect(() => {
+    if (selectedStudentId) {
+      loadScores();
+    }
+  }, [selectedStudentId, year, semester, loadScores]);
 
   const handleDelete = async (scoreId: number) => {
-    if (!confirm('성적을 삭제하시겠습니까?')) return;
+    if (!confirm('성적을 삭제하시겠습니까?')) {
+      return;
+    }
     await gradeService.deleteScore(scoreId);
     loadScores();
   };
@@ -62,29 +80,69 @@ function GradePage() {
         <h2 className="text-2xl font-bold tracking-tight">성적 관리</h2>
         {isTeacher && (
           <Button onClick={() => setShowForm(!showForm)}>
-            {showForm ? '취소' : <><Plus className="mr-1 h-4 w-4" /> 성적 등록</>}
+            {showForm ? (
+              '취소'
+            ) : (
+              <>
+                <Plus className="mr-1 h-4 w-4" /> 성적 등록
+              </>
+            )}
           </Button>
         )}
       </div>
 
-      {showForm && <ScoreForm students={students} subjects={subjects} onSuccess={() => { setShowForm(false); loadScores(); }} />}
+      {showForm && (
+        <ScoreForm
+          students={students}
+          subjects={subjects}
+          onSuccess={() => {
+            setShowForm(false);
+            loadScores();
+          }}
+        />
+      )}
 
       <div className="flex flex-wrap gap-3">
-        <Select value={year.toString()} onChange={(e) => setYear(Number(e.target.value))} className="w-28">
-          {[2024, 2025, 2026].map((y) => <option key={y} value={y}>{y}년</option>)}
+        <Select
+          value={year.toString()}
+          onChange={(e) => setYear(Number(e.target.value))}
+          className="w-28"
+        >
+          {[2024, 2025, 2026].map((y) => (
+            <option key={y} value={y}>
+              {y}년
+            </option>
+          ))}
         </Select>
-        <Select value={semester.toString()} onChange={(e) => setSemester(Number(e.target.value))} className="w-24">
+        <Select
+          value={semester.toString()}
+          onChange={(e) => setSemester(Number(e.target.value))}
+          className="w-24"
+        >
           <option value={1}>1학기</option>
           <option value={2}>2학기</option>
         </Select>
       </div>
 
       {isTeacher && (
-        <StudentSelector students={students} selectedStudentId={selectedStudentId} year={year} onSelect={setSelectedStudentId} />
+        <StudentSelector
+          students={students}
+          selectedStudentId={selectedStudentId}
+          year={year}
+          onSelect={setSelectedStudentId}
+        />
       )}
       {isParent && children.length > 1 && (
-        <Select value={selectedStudentId?.toString() ?? ''} onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)} className="w-40">
-          {children.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        <Select
+          value={selectedStudentId?.toString() ?? ''}
+          onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)}
+          className="w-40"
+        >
+          {children.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
         </Select>
       )}
 
@@ -111,7 +169,9 @@ function GradePage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">{summary.studentName}의 {summary.year}년 {summary.semester}학기 성적</CardTitle>
+              <CardTitle className="text-base">
+                {summary.studentName}의 {summary.year}년 {summary.semester}학기 성적
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
@@ -133,7 +193,12 @@ function GradePage() {
                       <TableCell>{s.rank ?? '-'}</TableCell>
                       {isTeacher && (
                         <TableCell>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(s.id)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(s.id)}
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </TableCell>

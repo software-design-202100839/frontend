@@ -30,13 +30,13 @@ function RecordForm({ studentId, subjects, editTarget, onSuccess }: Props) {
 
   const [year, setYear] = useState(editTarget?.year ?? 2026);
   const [semester, setSemester] = useState(editTarget?.semester ?? 1);
-  const [recordType, setRecordType] = useState<RecordType>(
-    editTarget?.recordType ?? 'BASIC',
-  );
+  const [recordType, setRecordType] = useState<RecordType>(editTarget?.recordType ?? 'BASIC');
   const [basicCategory, setBasicCategory] = useState<BasicCategory>(
     (editTarget?.category as BasicCategory) ?? 'ATTENDANCE',
   );
-  const [subjectId, setSubjectId] = useState<number | ''>(editTarget?.subjectId ?? subjects[0]?.id ?? '');
+  const [subjectId, setSubjectId] = useState<number | ''>(
+    editTarget?.subjectId ?? subjects[0]?.id ?? '',
+  );
   const [content, setContent] = useState(initialContent);
   const [isVisibleToStudent, setIsVisibleToStudent] = useState(
     editTarget?.isVisibleToStudent ?? false,
@@ -80,7 +80,10 @@ function RecordForm({ studentId, subjects, editTarget, onSuccess }: Props) {
       onSuccess();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
-      setError(axiosErr.response?.data?.message || (isEdit ? '수정에 실패했습니다' : '등록에 실패했습니다'));
+      setError(
+        axiosErr.response?.data?.message ||
+          (isEdit ? '수정에 실패했습니다' : '등록에 실패했습니다'),
+      );
     } finally {
       setSubmitting(false);
     }

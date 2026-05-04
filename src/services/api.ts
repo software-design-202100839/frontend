@@ -26,9 +26,12 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const { data } = await axios.post(`${import.meta.env.VITE_API_BASE_URL || '/api/v1'}/auth/refresh`, {
-            refreshToken,
-          });
+          const { data } = await axios.post(
+            `${import.meta.env.VITE_API_BASE_URL || '/api/v1'}/auth/refresh`,
+            {
+              refreshToken,
+            },
+          );
           const newAccessToken = data.data.accessToken;
           const newRefreshToken = data.data.refreshToken;
 

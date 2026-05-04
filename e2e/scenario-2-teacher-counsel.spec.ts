@@ -24,9 +24,11 @@ test.describe('시나리오 2: 교사 상담 내역 조회', () => {
   test('교사 로그인 → 상담 페이지 접근', async ({ page }) => {
     await loginViaUI(page, TEACHER_B.email, TEACHER_B.password);
 
-    await page.click('a[href="/counselings"], [data-testid="nav-counselings"]', { timeout: 5000 }).catch(() => {
-      return page.goto('/counselings');
-    });
+    await page
+      .click('a[href="/counselings"], [data-testid="nav-counselings"]', { timeout: 5000 })
+      .catch(() => {
+        return page.goto('/counselings');
+      });
 
     await expect(page).toHaveURL('/counselings');
     await expect(page.locator('body')).toContainText(/상담/);
@@ -35,9 +37,11 @@ test.describe('시나리오 2: 교사 상담 내역 조회', () => {
   test('알림 페이지 접근', async ({ page }) => {
     await loginViaUI(page, TEACHER_B.email, TEACHER_B.password);
 
-    await page.click('a[href="/notifications"], [data-testid="nav-notifications"]', { timeout: 5000 }).catch(() => {
-      return page.goto('/notifications');
-    });
+    await page
+      .click('a[href="/notifications"], [data-testid="nav-notifications"]', { timeout: 5000 })
+      .catch(() => {
+        return page.goto('/notifications');
+      });
 
     await expect(page).toHaveURL('/notifications');
     await expect(page.locator('body')).toContainText(/알림/);

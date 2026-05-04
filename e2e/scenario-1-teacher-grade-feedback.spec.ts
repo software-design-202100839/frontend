@@ -34,10 +34,12 @@ test.describe('시나리오 1: 교사 성적 확인 + 피드백 작성', () => {
     await loginViaUI(page, TEACHER.email, TEACHER.password);
 
     // 성적 관리로 이동
-    await page.click('a[href="/grades"], [data-testid="nav-grades"]', { timeout: 5000 }).catch(() => {
-      // nav 링크가 없으면 직접 이동
-      return page.goto('/grades');
-    });
+    await page
+      .click('a[href="/grades"], [data-testid="nav-grades"]', { timeout: 5000 })
+      .catch(() => {
+        // nav 링크가 없으면 직접 이동
+        return page.goto('/grades');
+      });
 
     await expect(page).toHaveURL('/grades');
     // 페이지 로드 확인 — "성적" 텍스트가 있어야 함
@@ -47,9 +49,11 @@ test.describe('시나리오 1: 교사 성적 확인 + 피드백 작성', () => {
   test('피드백 작성 페이지 접근', async ({ page }) => {
     await loginViaUI(page, TEACHER.email, TEACHER.password);
 
-    await page.click('a[href="/feedbacks"], [data-testid="nav-feedbacks"]', { timeout: 5000 }).catch(() => {
-      return page.goto('/feedbacks');
-    });
+    await page
+      .click('a[href="/feedbacks"], [data-testid="nav-feedbacks"]', { timeout: 5000 })
+      .catch(() => {
+        return page.goto('/feedbacks');
+      });
 
     await expect(page).toHaveURL('/feedbacks');
     await expect(page.locator('body')).toContainText(/피드백/);

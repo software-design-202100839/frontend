@@ -17,10 +17,34 @@ function DashboardPage() {
   }, [isTeacher]);
 
   const cards = [
-    { path: '/grades', icon: BookOpen, title: '성적 관리', desc: '학생별 과목 성적 조회 및 관리', color: 'text-blue-600' },
-    { path: '/records', icon: FileText, title: '학생부', desc: '출결, 특기사항, 수상 등 학생부 관리', color: 'text-emerald-600' },
-    { path: '/feedbacks', icon: MessageSquare, title: '피드백', desc: '학생 피드백 작성 및 관리', color: 'text-violet-600' },
-    { path: '/counselings', icon: ClipboardList, title: '상담내역', desc: '학생 상담 기록 및 공유', color: 'text-amber-600' },
+    {
+      path: '/grades',
+      icon: BookOpen,
+      title: '성적 관리',
+      desc: '학생별 과목 성적 조회 및 관리',
+      color: 'text-blue-600',
+    },
+    {
+      path: '/records',
+      icon: FileText,
+      title: '학생부',
+      desc: '출결, 특기사항, 수상 등 학생부 관리',
+      color: 'text-emerald-600',
+    },
+    {
+      path: '/feedbacks',
+      icon: MessageSquare,
+      title: '피드백',
+      desc: '학생 피드백 작성 및 관리',
+      color: 'text-violet-600',
+    },
+    {
+      path: '/counselings',
+      icon: ClipboardList,
+      title: '상담내역',
+      desc: '학생 상담 기록 및 공유',
+      color: 'text-amber-600',
+    },
   ];
 
   return (
@@ -54,7 +78,10 @@ function DashboardPage() {
               <CardTitle className="text-base">등록 학생</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-primary">{studentCount}<span className="text-base font-normal text-muted-foreground ml-1">명</span></p>
+              <p className="text-3xl font-bold text-primary">
+                {studentCount}
+                <span className="text-base font-normal text-muted-foreground ml-1">명</span>
+              </p>
             </CardContent>
           </Card>
         )}

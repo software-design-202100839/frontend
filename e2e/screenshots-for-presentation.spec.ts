@@ -31,19 +31,23 @@ const SUBJECTS = [
 
 const STUDENTS = [
   {
-    id: 1, name: '김민준',
+    id: 1,
+    name: '김민준',
     enrollments: [{ academicYear: 2026, grade: 2, classNum: 3, studentNum: 1 }],
   },
   {
-    id: 2, name: '이서연',
+    id: 2,
+    name: '이서연',
     enrollments: [{ academicYear: 2026, grade: 2, classNum: 3, studentNum: 2 }],
   },
   {
-    id: 3, name: '박지호',
+    id: 3,
+    name: '박지호',
     enrollments: [{ academicYear: 2026, grade: 2, classNum: 3, studentNum: 3 }],
   },
   {
-    id: 4, name: '최예린',
+    id: 4,
+    name: '최예린',
     enrollments: [{ academicYear: 2026, grade: 2, classNum: 3, studentNum: 4 }],
   },
 ];
@@ -54,14 +58,74 @@ const scoreOf = (studentName: string) => ({
   year: 2026,
   semester: 1,
   scores: [
-    { id: 1, studentId: 1, studentName, subjectId: 1, subjectName: '수학', subjectCode: 'MATH', year: 2026, semester: 1, score: 92, gradeLetter: 'A', rank: 3 },
-    { id: 2, studentId: 1, studentName, subjectId: 2, subjectName: '영어', subjectCode: 'ENG',  year: 2026, semester: 1, score: 88, gradeLetter: 'B', rank: 5 },
-    { id: 3, studentId: 1, studentName, subjectId: 3, subjectName: '국어', subjectCode: 'KOR',  year: 2026, semester: 1, score: 95, gradeLetter: 'A', rank: 1 },
-    { id: 4, studentId: 1, studentName, subjectId: 4, subjectName: '과학', subjectCode: 'SCI',  year: 2026, semester: 1, score: 78, gradeLetter: 'C', rank: 12 },
-    { id: 5, studentId: 1, studentName, subjectId: 5, subjectName: '사회', subjectCode: 'SOC',  year: 2026, semester: 1, score: 85, gradeLetter: 'B', rank: 7 },
+    {
+      id: 1,
+      studentId: 1,
+      studentName,
+      subjectId: 1,
+      subjectName: '수학',
+      subjectCode: 'MATH',
+      year: 2026,
+      semester: 1,
+      score: 92,
+      gradeLetter: 'A',
+      rank: 3,
+    },
+    {
+      id: 2,
+      studentId: 1,
+      studentName,
+      subjectId: 2,
+      subjectName: '영어',
+      subjectCode: 'ENG',
+      year: 2026,
+      semester: 1,
+      score: 88,
+      gradeLetter: 'B',
+      rank: 5,
+    },
+    {
+      id: 3,
+      studentId: 1,
+      studentName,
+      subjectId: 3,
+      subjectName: '국어',
+      subjectCode: 'KOR',
+      year: 2026,
+      semester: 1,
+      score: 95,
+      gradeLetter: 'A',
+      rank: 1,
+    },
+    {
+      id: 4,
+      studentId: 1,
+      studentName,
+      subjectId: 4,
+      subjectName: '과학',
+      subjectCode: 'SCI',
+      year: 2026,
+      semester: 1,
+      score: 78,
+      gradeLetter: 'C',
+      rank: 12,
+    },
+    {
+      id: 5,
+      studentId: 1,
+      studentName,
+      subjectId: 5,
+      subjectName: '사회',
+      subjectCode: 'SOC',
+      year: 2026,
+      semester: 1,
+      score: 85,
+      gradeLetter: 'B',
+      rank: 7,
+    },
   ],
   totalScore: 438,
-  averageScore: 87.60,
+  averageScore: 87.6,
   averageGradeLetter: 'B',
 });
 
@@ -69,11 +133,17 @@ const ok = (data: unknown) => JSON.stringify({ status: 'success', data });
 
 // ── 역할별 유저 객체 ────────────────────────────────────────────────────────
 const ADMIN_USER = {
-  id: 1, name: '김관리자', email: 'admin@school.kr', role: 'ADMIN',
+  id: 1,
+  name: '김관리자',
+  email: 'admin@school.kr',
+  role: 'ADMIN',
 };
 
 const TEACHER_USER = {
-  id: 10, name: '이수학', email: 'teacher@school.kr', role: 'TEACHER',
+  id: 10,
+  name: '이수학',
+  email: 'teacher@school.kr',
+  role: 'TEACHER',
   roleEntityId: 1,
   roleDetail: {
     department: '수학과',
@@ -86,7 +156,10 @@ const TEACHER_USER = {
 };
 
 const STUDENT_USER = {
-  id: 20, name: '김민준', email: 'student@school.kr', role: 'STUDENT',
+  id: 20,
+  name: '김민준',
+  email: 'student@school.kr',
+  role: 'STUDENT',
   roleEntityId: 1,
   roleDetail: {
     currentEnrollment: { academicYear: 2026, grade: 2, classNum: 3, studentNum: 1 },
@@ -94,7 +167,10 @@ const STUDENT_USER = {
 };
 
 const PARENT_USER = {
-  id: 30, name: '김부모', email: 'parent@school.kr', role: 'PARENT',
+  id: 30,
+  name: '김부모',
+  email: 'parent@school.kr',
+  role: 'PARENT',
   children: [
     { id: 1, name: '김민준' },
     { id: 4, name: '김서준' },
@@ -117,9 +193,16 @@ async function injectUser(page: Page, user: object) {
 async function mockCommon(page: Page) {
   // 401 루프 방지: refresh 실패 시 /login으로 가지 않도록 refresh 성공 모킹
   await page.route('**/api/v1/auth/refresh**', (r) =>
-    r.fulfill({ status: 200, contentType: 'application/json',
-      body: ok({ accessToken: 'mock-token', refreshToken: 'mock-refresh',
-                  expiresIn: 3600, user: TEACHER_USER }) }),
+    r.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: ok({
+        accessToken: 'mock-token',
+        refreshToken: 'mock-refresh',
+        expiresIn: 3600,
+        user: TEACHER_USER,
+      }),
+    }),
   );
   // 알림 (Layout의 useNotification 훅)
   await page.route('**/api/v1/notifications**', (r) =>
@@ -144,14 +227,50 @@ test('01_로그인_페이지', async ({ page }) => {
 // ── 스크린샷 2: 관리자 — 교사 목록 관리 ───────────────────────────────────
 test('02_관리자_교사관리', async ({ page }) => {
   await mockCommon(page);
-  const page_ = <T,>(content: T[]) => ok({ content, totalElements: content.length, totalPages: 1 });
+  const page_ = <T>(content: T[]) => ok({ content, totalElements: content.length, totalPages: 1 });
   await page.route('**/api/v1/admin/teachers**', (r) =>
-    r.fulfill({ status: 200, contentType: 'application/json', body: page_([
-      { id: 1, name: '이수학', email: 'math@s.kr', phone: '010-1111-2222', department: '수학과', activated: true,  active: true  },
-      { id: 2, name: '김영어', email: 'eng@s.kr',  phone: '010-3333-4444', department: '영어과', activated: true,  active: true  },
-      { id: 3, name: '박체육', email: 'pe@s.kr',   phone: '010-5555-6666', department: '체육과', activated: false, active: true  },
-      { id: 4, name: '최과학', email: 'sci@s.kr',  phone: '010-7777-8888', department: '과학과', activated: true,  active: false },
-    ]) }),
+    r.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: page_([
+        {
+          id: 1,
+          name: '이수학',
+          email: 'math@s.kr',
+          phone: '010-1111-2222',
+          department: '수학과',
+          activated: true,
+          active: true,
+        },
+        {
+          id: 2,
+          name: '김영어',
+          email: 'eng@s.kr',
+          phone: '010-3333-4444',
+          department: '영어과',
+          activated: true,
+          active: true,
+        },
+        {
+          id: 3,
+          name: '박체육',
+          email: 'pe@s.kr',
+          phone: '010-5555-6666',
+          department: '체육과',
+          activated: false,
+          active: true,
+        },
+        {
+          id: 4,
+          name: '최과학',
+          email: 'sci@s.kr',
+          phone: '010-7777-8888',
+          department: '과학과',
+          activated: true,
+          active: false,
+        },
+      ]),
+    }),
   );
   await page.route('**/api/v1/admin/students**', (r) =>
     r.fulfill({ status: 200, contentType: 'application/json', body: page_([]) }),
@@ -189,8 +308,7 @@ test('04_교사_성적관리', async ({ page }) => {
     r.fulfill({ status: 200, contentType: 'application/json', body: ok(STUDENTS) }),
   );
   await page.route('**/api/v1/grades/students/**', (r) =>
-    r.fulfill({ status: 200, contentType: 'application/json',
-      body: ok(scoreOf('김민준')) }),
+    r.fulfill({ status: 200, contentType: 'application/json', body: ok(scoreOf('김민준')) }),
   );
 
   await injectUser(page, TEACHER_USER);
@@ -211,8 +329,7 @@ test('05_교사_성적등록폼', async ({ page }) => {
     r.fulfill({ status: 200, contentType: 'application/json', body: ok(STUDENTS) }),
   );
   await page.route('**/api/v1/grades/students/**', (r) =>
-    r.fulfill({ status: 200, contentType: 'application/json',
-      body: ok(scoreOf('김민준')) }),
+    r.fulfill({ status: 200, contentType: 'application/json', body: ok(scoreOf('김민준')) }),
   );
 
   await injectUser(page, TEACHER_USER);
@@ -239,8 +356,7 @@ test('06_학생_대시보드', async ({ page }) => {
 test('07_학생_성적조회', async ({ page }) => {
   await mockCommon(page);
   await page.route('**/api/v1/grades/students/**', (r) =>
-    r.fulfill({ status: 200, contentType: 'application/json',
-      body: ok(scoreOf('김민준')) }),
+    r.fulfill({ status: 200, contentType: 'application/json', body: ok(scoreOf('김민준')) }),
   );
 
   await injectUser(page, STUDENT_USER);

@@ -25,37 +25,66 @@ function ScoreForm({ students, subjects, onSuccess }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!studentId || !subjectId || !score) { setError('모든 항목을 입력해주세요'); return; }
+    if (!studentId || !subjectId || !score) {
+      setError('모든 항목을 입력해주세요');
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
-      await gradeService.createScore({ studentId: Number(studentId), subjectId: Number(subjectId), year, semester, score: Number(score) });
+      await gradeService.createScore({
+        studentId: Number(studentId),
+        subjectId: Number(subjectId),
+        year,
+        semester,
+        score: Number(score),
+      });
       onSuccess();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       setError(axiosErr.response?.data?.message || '성적 등록에 실패했습니다');
-    } finally { setSubmitting(false); }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <Card>
-      <CardHeader><CardTitle className="text-base">성적 등록</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle className="text-base">성적 등록</CardTitle>
+      </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+          {error && (
+            <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+          )}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>학생</Label>
-              <Select value={studentId.toString()} onChange={(e) => setStudentId(Number(e.target.value) || '')}>
+              <Select
+                value={studentId.toString()}
+                onChange={(e) => setStudentId(Number(e.target.value) || '')}
+              >
                 <option value="">학생 선택</option>
-                {students.map((s) => <option key={s.id} value={s.id}>{formatStudentLabel(s, year)}</option>)}
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {formatStudentLabel(s, year)}
+                  </option>
+                ))}
               </Select>
             </div>
             <div className="space-y-2">
               <Label>과목</Label>
-              <Select value={subjectId.toString()} onChange={(e) => setSubjectId(Number(e.target.value) || '')}>
+              <Select
+                value={subjectId.toString()}
+                onChange={(e) => setSubjectId(Number(e.target.value) || '')}
+              >
                 <option value="">과목 선택</option>
-                {subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                {subjects.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
               </Select>
             </div>
           </div>
@@ -63,22 +92,39 @@ function ScoreForm({ students, subjects, onSuccess }: Props) {
             <div className="space-y-2">
               <Label>학년도</Label>
               <Select value={year.toString()} onChange={(e) => setYear(Number(e.target.value))}>
-                {[2024, 2025, 2026].map((y) => <option key={y} value={y}>{y}년</option>)}
+                {[2024, 2025, 2026].map((y) => (
+                  <option key={y} value={y}>
+                    {y}년
+                  </option>
+                ))}
               </Select>
             </div>
             <div className="space-y-2">
               <Label>학기</Label>
-              <Select value={semester.toString()} onChange={(e) => setSemester(Number(e.target.value))}>
+              <Select
+                value={semester.toString()}
+                onChange={(e) => setSemester(Number(e.target.value))}
+              >
                 <option value={1}>1학기</option>
                 <option value={2}>2학기</option>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>점수</Label>
-              <Input type="number" placeholder="0~100" value={score} onChange={(e) => setScore(e.target.value)} min="0" max="100" step="0.01" />
+              <Input
+                type="number"
+                placeholder="0~100"
+                value={score}
+                onChange={(e) => setScore(e.target.value)}
+                min="0"
+                max="100"
+                step="0.01"
+              />
             </div>
           </div>
-          <Button type="submit" disabled={submitting}>{submitting ? '등록 중...' : '등록'}</Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? '등록 중...' : '등록'}
+          </Button>
         </form>
       </CardContent>
     </Card>

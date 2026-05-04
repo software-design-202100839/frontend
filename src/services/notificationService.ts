@@ -1,7 +1,12 @@
 import api from './api';
 import type { ApiResponse } from './authService';
 
-export type NotificationType = 'SCORE_UPDATE' | 'FEEDBACK_NEW' | 'RECORD_UPDATE' | 'COUNSEL_UPDATE' | 'SYSTEM';
+export type NotificationType =
+  | 'SCORE_UPDATE'
+  | 'FEEDBACK_NEW'
+  | 'RECORD_UPDATE'
+  | 'COUNSEL_UPDATE'
+  | 'SYSTEM';
 export type NotificationReferenceType = 'SCORE' | 'FEEDBACK' | 'RECORD' | 'COUNSEL';
 
 export interface NotificationResponse {

@@ -87,8 +87,12 @@ const studentService = {
     recordType?: RecordType,
   ): Promise<StudentRecord[]> {
     const params: Record<string, unknown> = { year, semester };
-    if (category) params.category = category;
-    if (recordType) params.recordType = recordType;
+    if (category) {
+      params.category = category;
+    }
+    if (recordType) {
+      params.recordType = recordType;
+    }
     const { data } = await api.get<ApiResponse<StudentRecord[]>>(`/students/${studentId}/records`, {
       params,
     });
@@ -109,7 +113,10 @@ const studentService = {
     return data.data;
   },
 
-  async updateRecord(recordId: number, request: StudentRecordUpdateRequest): Promise<StudentRecord> {
+  async updateRecord(
+    recordId: number,
+    request: StudentRecordUpdateRequest,
+  ): Promise<StudentRecord> {
     const { data } = await api.put<ApiResponse<StudentRecord>>(
       `/students/records/${recordId}`,
       request,

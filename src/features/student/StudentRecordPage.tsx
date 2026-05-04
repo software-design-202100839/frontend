@@ -128,7 +128,13 @@ function StudentRecordPage() {
             }}
             variant={showForm ? 'outline' : 'default'}
           >
-            {showForm ? '취소' : <><Plus className="h-4 w-4" /> 항목 등록</>}
+            {showForm ? (
+              '취소'
+            ) : (
+              <>
+                <Plus className="h-4 w-4" /> 항목 등록
+              </>
+            )}
           </Button>
         )}
       </div>
@@ -144,13 +150,25 @@ function StudentRecordPage() {
 
       <div className="flex flex-wrap gap-3">
         <Select value={year} onChange={(e) => setYear(Number(e.target.value))} className="w-28">
-          {[2024, 2025, 2026].map((y) => <option key={y} value={y}>{y}년</option>)}
+          {[2024, 2025, 2026].map((y) => (
+            <option key={y} value={y}>
+              {y}년
+            </option>
+          ))}
         </Select>
-        <Select value={semester} onChange={(e) => setSemester(Number(e.target.value))} className="w-24">
+        <Select
+          value={semester}
+          onChange={(e) => setSemester(Number(e.target.value))}
+          className="w-24"
+        >
           <option value={1}>1학기</option>
           <option value={2}>2학기</option>
         </Select>
-        <Select value={recordType} onChange={(e) => handleRecordTypeChange(e.target.value as RecordType | '')} className="w-auto">
+        <Select
+          value={recordType}
+          onChange={(e) => handleRecordTypeChange(e.target.value as RecordType | '')}
+          className="w-auto"
+        >
           <option value="">전체 구분</option>
           <option value="BASIC">담임</option>
           <option value="SPECIAL">교과</option>
@@ -171,11 +189,24 @@ function StudentRecordPage() {
       </div>
 
       {isTeacher && (
-        <StudentSelector students={students} selectedStudentId={selectedStudentId} year={year} onSelect={setSelectedStudentId} />
+        <StudentSelector
+          students={students}
+          selectedStudentId={selectedStudentId}
+          year={year}
+          onSelect={setSelectedStudentId}
+        />
       )}
       {isParent && children.length > 1 && (
-        <Select value={selectedStudentId ?? ''} onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)} className="w-40">
-          {children.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        <Select
+          value={selectedStudentId ?? ''}
+          onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)}
+          className="w-40"
+        >
+          {children.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
         </Select>
       )}
 
@@ -199,9 +230,7 @@ function StudentRecordPage() {
                 <Badge variant={record.recordType === 'BASIC' ? 'success' : 'warning'}>
                   {studentService.recordTypeLabels[record.recordType]}
                 </Badge>
-                <Badge variant="secondary">
-                  {studentService.categoryLabels[record.category]}
-                </Badge>
+                <Badge variant="secondary">{studentService.categoryLabels[record.category]}</Badge>
                 {record.subjectName && (
                   <span className="text-xs text-muted-foreground">{record.subjectName}</span>
                 )}

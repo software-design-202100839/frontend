@@ -15,7 +15,12 @@ interface StudentSelectorProps {
   onSelect: (studentId: number) => void;
 }
 
-export default function StudentSelector({ students, selectedStudentId, year, onSelect }: StudentSelectorProps) {
+export default function StudentSelector({
+  students,
+  selectedStudentId,
+  year,
+  onSelect,
+}: StudentSelectorProps) {
   const [gradeFilter, setGradeFilter] = useState<number | ''>('');
   const [classFilter, setClassFilter] = useState<number | ''>('');
   const [nameSearch, setNameSearch] = useState('');
@@ -24,7 +29,9 @@ export default function StudentSelector({ students, selectedStudentId, year, onS
     const set = new Set<number>();
     students.forEach((s) => {
       const e = getEnrollment(s, year);
-      if (e) set.add(e.grade);
+      if (e) {
+        set.add(e.grade);
+      }
     });
     return Array.from(set).sort();
   }, [students, year]);
@@ -33,28 +40,48 @@ export default function StudentSelector({ students, selectedStudentId, year, onS
     const set = new Set<number>();
     students.forEach((s) => {
       const e = getEnrollment(s, year);
-      if (e && (gradeFilter === '' || e.grade === gradeFilter)) set.add(e.classNum);
+      if (e && (gradeFilter === '' || e.grade === gradeFilter)) {
+        set.add(e.classNum);
+      }
     });
     return Array.from(set).sort();
   }, [students, year, gradeFilter]);
 
   const filtered = useMemo(() => {
-    return students.filter((s) => {
-      const e = getEnrollment(s, year);
-      if (gradeFilter !== '' && (!e || e.grade !== gradeFilter)) return false;
-      if (classFilter !== '' && (!e || e.classNum !== classFilter)) return false;
-      if (nameSearch && !s.name.includes(nameSearch)) return false;
-      return true;
-    }).sort((a, b) => {
-      const ea = getEnrollment(a, year);
-      const eb = getEnrollment(b, year);
-      if (!ea && !eb) return a.name.localeCompare(b.name);
-      if (!ea) return 1;
-      if (!eb) return -1;
-      if (ea.grade !== eb.grade) return ea.grade - eb.grade;
-      if (ea.classNum !== eb.classNum) return ea.classNum - eb.classNum;
-      return ea.studentNum - eb.studentNum;
-    });
+    return students
+      .filter((s) => {
+        const e = getEnrollment(s, year);
+        if (gradeFilter !== '' && (!e || e.grade !== gradeFilter)) {
+          return false;
+        }
+        if (classFilter !== '' && (!e || e.classNum !== classFilter)) {
+          return false;
+        }
+        if (nameSearch && !s.name.includes(nameSearch)) {
+          return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const ea = getEnrollment(a, year);
+        const eb = getEnrollment(b, year);
+        if (!ea && !eb) {
+          return a.name.localeCompare(b.name);
+        }
+        if (!ea) {
+          return 1;
+        }
+        if (!eb) {
+          return -1;
+        }
+        if (ea.grade !== eb.grade) {
+          return ea.grade - eb.grade;
+        }
+        if (ea.classNum !== eb.classNum) {
+          return ea.classNum - eb.classNum;
+        }
+        return ea.studentNum - eb.studentNum;
+      });
   }, [students, year, gradeFilter, classFilter, nameSearch]);
 
   return (
@@ -63,11 +90,18 @@ export default function StudentSelector({ students, selectedStudentId, year, onS
         <div className="flex flex-wrap gap-2">
           <Select
             value={gradeFilter.toString()}
-            onChange={(e) => { setGradeFilter(e.target.value === '' ? '' : Number(e.target.value)); setClassFilter(''); }}
+            onChange={(e) => {
+              setGradeFilter(e.target.value === '' ? '' : Number(e.target.value));
+              setClassFilter('');
+            }}
             className="w-28"
           >
             <option value="">전체 학년</option>
-            {grades.map((g) => <option key={g} value={g}>{g}학년</option>)}
+            {grades.map((g) => (
+              <option key={g} value={g}>
+                {g}학년
+              </option>
+            ))}
           </Select>
 
           <Select
@@ -76,7 +110,11 @@ export default function StudentSelector({ students, selectedStudentId, year, onS
             className="w-24"
           >
             <option value="">전체 반</option>
-            {classes.map((c) => <option key={c} value={c}>{c}반</option>)}
+            {classes.map((c) => (
+              <option key={c} value={c}>
+                {c}반
+              </option>
+            ))}
           </Select>
 
           <div className="relative flex-1 min-w-[160px]">
@@ -92,7 +130,9 @@ export default function StudentSelector({ students, selectedStudentId, year, onS
 
         <div className="max-h-48 overflow-y-auto rounded-md border">
           {filtered.length === 0 && (
-            <div className="py-6 text-center text-sm text-muted-foreground">검색 결과가 없습니다.</div>
+            <div className="py-6 text-center text-sm text-muted-foreground">
+              검색 결과가 없습니다.
+            </div>
           )}
           {filtered.map((s) => {
             const e = getEnrollment(s, year);
