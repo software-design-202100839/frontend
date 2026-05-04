@@ -15,7 +15,7 @@ export interface StudentInfo {
 
 /** 특정 학년도의 enrollment를 찾는다. 없으면 undefined. */
 export function getEnrollment(student: StudentInfo, academicYear: number): Enrollment | undefined {
-  return student.enrollments.find((e) => e.academicYear === academicYear);
+  return (student.enrollments ?? []).find((e) => e.academicYear === academicYear);
 }
 
 /** 학생 선택 드롭다운 표시 레이블.
@@ -28,8 +28,9 @@ export function formatStudentLabel(student: StudentInfo, academicYear: number): 
 
 /** 가장 최근 학년도(최대값)의 enrollment를 반환한다. */
 export function getLatestEnrollment(student: StudentInfo): Enrollment | undefined {
-  if (student.enrollments.length === 0) return undefined;
-  return student.enrollments.reduce((prev, curr) =>
+  const enrollments = student.enrollments ?? [];
+  if (enrollments.length === 0) return undefined;
+  return enrollments.reduce((prev, curr) =>
     curr.academicYear > prev.academicYear ? curr : prev
   );
 }

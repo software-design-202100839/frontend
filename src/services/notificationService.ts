@@ -1,8 +1,8 @@
 import api from './api';
 import type { ApiResponse } from './authService';
 
-export type NotificationType = 'SCORE_UPDATE' | 'FEEDBACK_NEW' | 'COUNSEL_UPDATE' | 'SYSTEM';
-export type NotificationReferenceType = 'SCORE' | 'FEEDBACK' | 'COUNSEL';
+export type NotificationType = 'SCORE_UPDATE' | 'FEEDBACK_NEW' | 'RECORD_UPDATE' | 'COUNSEL_UPDATE' | 'SYSTEM';
+export type NotificationReferenceType = 'SCORE' | 'FEEDBACK' | 'RECORD' | 'COUNSEL';
 
 export interface NotificationResponse {
   id: number;
@@ -22,6 +22,7 @@ export interface UnreadCountResponse {
 export const typeLabels: Record<NotificationType, string> = {
   SCORE_UPDATE: '성적',
   FEEDBACK_NEW: '피드백',
+  RECORD_UPDATE: '학생부',
   COUNSEL_UPDATE: '상담',
   SYSTEM: '시스템',
 };

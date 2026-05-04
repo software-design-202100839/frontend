@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import gradeService from '../../services/gradeService';
 import studentService from '../../services/studentService';
 import type { StudentInfo } from '../../services/gradeService';
 import type { Subject } from '../../services/gradeService';
 import { formatStudentLabel } from '../../types/student';
+import StudentSelector from '@/components/StudentSelector';
 import type {
   StudentRecord,
   RecordType,
@@ -13,6 +15,10 @@ import type {
 } from '../../services/studentService';
 import authService from '../../services/authService';
 import RecordForm from './RecordForm';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Select } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 const basicCategories: BasicCategory[] = ['ATTENDANCE', 'GENERAL_OPINION', 'AWARD', 'VOLUNTEER'];
 const specialCategories: SpecialCategory[] = ['SPECIAL_NOTE'];
@@ -27,17 +33,22 @@ function StudentRecordPage() {
   const [categoryFilter, setCategoryFilter] = useState<RecordCategory | ''>('');
   const [records, setRecords] = useState<StudentRecord[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editTarget, setEditTarget] = useState<StudentRecord | null>(null);
   const [loading, setLoading] = useState(false);
 
   const user = authService.getStoredUser();
   const isTeacher = user?.role === 'TEACHER';
+  const isParent = user?.role === 'PARENT';
+  const children = user?.children ?? [];
 
   useEffect(() => {
     if (isTeacher) {
       gradeService.getStudents().then(setStudents);
       gradeService.getSubjects().then(setSubjects);
-    } else if (user?.roleEntityId) {
+    } else if (user?.role === 'STUDENT' && user?.roleEntityId) {
       setSelectedStudentId(user.roleEntityId);
+    } else if (isParent && children.length > 0) {
+      setSelectedStudentId(children[0].id);
     }
   }, []);
 
@@ -77,7 +88,13 @@ function StudentRecordPage() {
 
   const handleCreated = () => {
     setShowForm(false);
+    setEditTarget(null);
     loadRecords();
+  };
+
+  const handleEdit = (record: StudentRecord) => {
+    setEditTarget(record);
+    setShowForm(true);
   };
 
   const handleDelete = async (recordId: number) => {
@@ -96,71 +113,53 @@ function StudentRecordPage() {
   const selectedStudent = students.find((s) => s.id === selectedStudentId);
 
   return (
-    <div>
-      <div style={styles.toolbar}>
-        <h2 style={styles.title}>학생부 관리</h2>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">학생부 관리</h2>
         {isTeacher && (
-          <button onClick={() => setShowForm(!showForm)} style={styles.addButton}>
-            {showForm ? '취소' : '+ 항목 등록'}
-          </button>
+          <Button
+            onClick={() => {
+              if (showForm) {
+                setShowForm(false);
+                setEditTarget(null);
+              } else {
+                setShowForm(true);
+              }
+            }}
+            variant={showForm ? 'outline' : 'default'}
+          >
+            {showForm ? '취소' : <><Plus className="h-4 w-4" /> 항목 등록</>}
+          </Button>
         )}
       </div>
 
       {showForm && selectedStudentId && (
-        <RecordForm studentId={selectedStudentId} subjects={subjects} onSuccess={handleCreated} />
+        <RecordForm
+          studentId={selectedStudentId}
+          subjects={subjects}
+          editTarget={editTarget}
+          onSuccess={handleCreated}
+        />
       )}
 
-      <div style={styles.filterRow}>
-        {isTeacher && (
-          <select
-            value={selectedStudentId ?? ''}
-            onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)}
-            style={styles.select}
-          >
-            <option value="">학생 선택</option>
-            {students.map((s) => (
-              <option key={s.id} value={s.id}>
-                {formatStudentLabel(s, year)}
-              </option>
-            ))}
-          </select>
-        )}
-
-        <select
-          value={year}
-          onChange={(e) => setYear(Number(e.target.value))}
-          style={styles.select}
-        >
-          {[2024, 2025, 2026].map((y) => (
-            <option key={y} value={y}>
-              {y}년
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={semester}
-          onChange={(e) => setSemester(Number(e.target.value))}
-          style={styles.select}
-        >
+      <div className="flex flex-wrap gap-3">
+        <Select value={year} onChange={(e) => setYear(Number(e.target.value))} className="w-28">
+          {[2024, 2025, 2026].map((y) => <option key={y} value={y}>{y}년</option>)}
+        </Select>
+        <Select value={semester} onChange={(e) => setSemester(Number(e.target.value))} className="w-24">
           <option value={1}>1학기</option>
           <option value={2}>2학기</option>
-        </select>
-
-        <select
-          value={recordType}
-          onChange={(e) => handleRecordTypeChange(e.target.value as RecordType | '')}
-          style={styles.select}
-        >
+        </Select>
+        <Select value={recordType} onChange={(e) => handleRecordTypeChange(e.target.value as RecordType | '')} className="w-auto">
           <option value="">전체 구분</option>
           <option value="BASIC">담임</option>
           <option value="SPECIAL">교과</option>
-        </select>
+        </Select>
 
-        <select
+        <Select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value as RecordCategory | '')}
-          style={styles.select}
+          className="w-auto"
         >
           <option value="">전체 카테고리</option>
           {availableCategories.map((c) => (
@@ -168,169 +167,97 @@ function StudentRecordPage() {
               {studentService.categoryLabels[c]}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
+      {isTeacher && (
+        <StudentSelector students={students} selectedStudentId={selectedStudentId} year={year} onSelect={setSelectedStudentId} />
+      )}
+      {isParent && children.length > 1 && (
+        <Select value={selectedStudentId ?? ''} onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)} className="w-40">
+          {children.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </Select>
+      )}
+
       {selectedStudent && (
-        <div style={styles.studentInfo}>
+        <div className="rounded-md bg-muted px-4 py-3 text-sm">
           <strong>{formatStudentLabel(selectedStudent, year)}</strong>
         </div>
       )}
 
-      {loading && <p style={styles.loading}>로딩 중...</p>}
+      {loading && <p className="text-center text-muted-foreground">로딩 중...</p>}
 
       {!loading && records.length === 0 && selectedStudentId && (
-        <p style={styles.empty}>등록된 학생부 항목이 없습니다.</p>
+        <p className="py-10 text-center text-muted-foreground">등록된 학생부 항목이 없습니다.</p>
       )}
 
-      {records.map((record) => (
-        <div key={record.id} style={styles.recordCard}>
-          <div style={styles.recordHeader}>
-            <span style={record.recordType === 'BASIC' ? styles.basicBadge : styles.specialBadge}>
-              {studentService.recordTypeLabels[record.recordType]}
-            </span>
-            <span style={styles.badge}>{studentService.categoryLabels[record.category]}</span>
-            {record.subjectName && <span style={styles.subject}>{record.subjectName}</span>}
-            <span style={styles.date}>
-              {new Date(record.updatedAt).toLocaleDateString('ko-KR')}
-            </span>
-            <div style={styles.visibilityTags}>
-              <span style={record.isVisibleToStudent ? styles.visibleTag : styles.hiddenTag}>
-                학생 {record.isVisibleToStudent ? '공개' : '비공개'}
-              </span>
-              <span style={record.isVisibleToParent ? styles.visibleTag : styles.hiddenTag}>
-                학부모 {record.isVisibleToParent ? '공개' : '비공개'}
-              </span>
-            </div>
-            {isTeacher && (
-              <button
-                onClick={() => handleDelete(record.id)}
-                style={styles.deleteButton}
-              >
-                삭제
-              </button>
-            )}
-          </div>
-          <p style={styles.content}>
-            {typeof record.content.text === 'string'
-              ? record.content.text
-              : JSON.stringify(record.content, null, 2)}
-          </p>
-        </div>
-      ))}
+      <div className="space-y-3">
+        {records.map((record) => (
+          <Card key={record.id}>
+            <CardContent className="p-4">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <Badge variant={record.recordType === 'BASIC' ? 'success' : 'warning'}>
+                  {studentService.recordTypeLabels[record.recordType]}
+                </Badge>
+                <Badge variant="secondary">
+                  {studentService.categoryLabels[record.category]}
+                </Badge>
+                {record.subjectName && (
+                  <span className="text-xs text-muted-foreground">{record.subjectName}</span>
+                )}
+                <span className="text-xs text-muted-foreground">
+                  {new Date(record.updatedAt).toLocaleDateString('ko-KR')}
+                </span>
+                {isTeacher && (
+                  <div className="flex gap-1">
+                    <Badge
+                      variant={record.isVisibleToStudent ? 'success' : 'outline'}
+                      className="text-[11px]"
+                    >
+                      {record.isVisibleToStudent ? (
+                        <Eye className="mr-1 h-3 w-3" />
+                      ) : (
+                        <EyeOff className="mr-1 h-3 w-3" />
+                      )}
+                      학생 {record.isVisibleToStudent ? '공개' : '비공개'}
+                    </Badge>
+                    <Badge
+                      variant={record.isVisibleToParent ? 'success' : 'outline'}
+                      className="text-[11px]"
+                    >
+                      {record.isVisibleToParent ? (
+                        <Eye className="mr-1 h-3 w-3" />
+                      ) : (
+                        <EyeOff className="mr-1 h-3 w-3" />
+                      )}
+                      학부모 {record.isVisibleToParent ? '공개' : '비공개'}
+                    </Badge>
+                  </div>
+                )}
+                {isTeacher && (
+                  <div className="ml-auto flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(record)}>
+                      <Edit className="h-3.5 w-3.5" />
+                      수정
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(record.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                      삭제
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                {typeof record.content.text === 'string'
+                  ? record.content.text
+                  : JSON.stringify(record.content, null, 2)}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  toolbar: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px',
-  },
-  title: { margin: 0 },
-  addButton: {
-    padding: '8px 16px',
-    backgroundColor: '#4a90d9',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-  },
-  filterRow: {
-    display: 'flex',
-    gap: '12px',
-    marginBottom: '16px',
-    flexWrap: 'wrap' as const,
-  },
-  select: {
-    padding: '8px 12px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '14px',
-  },
-  studentInfo: {
-    padding: '12px 16px',
-    backgroundColor: '#f8f9fa',
-    borderRadius: '4px',
-    marginBottom: '16px',
-    fontSize: '14px',
-  },
-  loading: { color: '#999', textAlign: 'center' },
-  empty: { textAlign: 'center', color: '#999', padding: '40px' },
-  recordCard: {
-    backgroundColor: '#fff',
-    padding: '16px',
-    borderRadius: '8px',
-    border: '1px solid #e5e5e5',
-    marginBottom: '12px',
-  },
-  recordHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginBottom: '8px',
-    flexWrap: 'wrap' as const,
-  },
-  basicBadge: {
-    padding: '2px 8px',
-    backgroundColor: '#e6f7e6',
-    color: '#52c41a',
-    borderRadius: '4px',
-    fontSize: '11px',
-    fontWeight: 'bold',
-  },
-  specialBadge: {
-    padding: '2px 8px',
-    backgroundColor: '#fff7e6',
-    color: '#fa8c16',
-    borderRadius: '4px',
-    fontSize: '11px',
-    fontWeight: 'bold',
-  },
-  badge: {
-    padding: '2px 8px',
-    backgroundColor: '#e8f0fe',
-    color: '#4a90d9',
-    borderRadius: '4px',
-    fontSize: '12px',
-    fontWeight: 'bold',
-  },
-  subject: { fontSize: '12px', color: '#555' },
-  date: { fontSize: '12px', color: '#999' },
-  visibilityTags: { display: 'flex', gap: '4px' },
-  visibleTag: {
-    padding: '2px 6px',
-    backgroundColor: '#e6f7e6',
-    color: '#52c41a',
-    borderRadius: '4px',
-    fontSize: '11px',
-  },
-  hiddenTag: {
-    padding: '2px 6px',
-    backgroundColor: '#f5f5f5',
-    color: '#999',
-    borderRadius: '4px',
-    fontSize: '11px',
-  },
-  deleteButton: {
-    marginLeft: 'auto',
-    padding: '4px 8px',
-    backgroundColor: '#ff4d4f',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px',
-  },
-  content: {
-    margin: 0,
-    fontSize: '14px',
-    lineHeight: '1.6',
-    color: '#333',
-    whiteSpace: 'pre-wrap',
-  },
-};
 
 export default StudentRecordPage;

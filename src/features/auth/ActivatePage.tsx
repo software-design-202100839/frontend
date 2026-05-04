@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { GraduationCap, ArrowLeft } from 'lucide-react';
 import authService from '../../services/authService';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 type Step = 1 | 2;
 
@@ -22,8 +27,7 @@ export default function ActivatePage() {
       await authService.sendOtp(phone, 'ACTIVATE');
       setStep(2);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })
-        ?.response?.data?.message;
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg ?? '인증번호 발송에 실패했습니다.');
     } finally {
       setLoading(false);
@@ -38,8 +42,7 @@ export default function ActivatePage() {
       await authService.activate(phone, otpCode, email, password);
       navigate('/login', { state: { message: '계정이 활성화되었습니다. 로그인해주세요.' } });
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })
-        ?.response?.data?.message;
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg ?? '계정 활성화에 실패했습니다.');
     } finally {
       setLoading(false);
@@ -47,178 +50,53 @@ export default function ActivatePage() {
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>계정 활성화</h2>
-        <p style={styles.subtitle}>
-          관리자로부터 등록된 전화번호로 인증번호를 받아 계정을 활성화합니다.
-        </p>
-
-        {step === 1 && (
-          <form onSubmit={handleSendOtp}>
-            <div style={styles.field}>
-              <label style={styles.label}>전화번호</label>
-              <input
-                style={styles.input}
-                type="tel"
-                placeholder="010-1234-5678"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-              />
-            </div>
-            {error && <p style={styles.error}>{error}</p>}
-            <button style={styles.button} type="submit" disabled={loading}>
-              {loading ? '발송 중...' : '인증번호 받기'}
-            </button>
-          </form>
-        )}
-
-        {step === 2 && (
-          <form onSubmit={handleActivate}>
-            <div style={styles.field}>
-              <label style={styles.label}>인증번호</label>
-              <input
-                style={styles.input}
-                type="text"
-                placeholder="6자리 숫자"
-                maxLength={6}
-                value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value)}
-                required
-              />
-              <small style={styles.hint}>{phone}으로 발송된 6자리 인증번호를 입력하세요.</small>
-            </div>
-            <div style={styles.field}>
-              <label style={styles.label}>이메일 (로그인 ID)</label>
-              <input
-                style={styles.input}
-                type="email"
-                placeholder="example@school.ac.kr"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div style={styles.field}>
-              <label style={styles.label}>비밀번호</label>
-              <input
-                style={styles.input}
-                type="password"
-                placeholder="영문 대소문자 + 숫자 + 특수문자, 8자 이상"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            {error && <p style={styles.error}>{error}</p>}
-            <button style={styles.button} type="submit" disabled={loading}>
-              {loading ? '처리 중...' : '계정 활성화'}
-            </button>
-            <button
-              type="button"
-              style={styles.linkButton}
-              onClick={() => { setStep(1); setError(''); }}
-            >
-              전화번호 다시 입력
-            </button>
-          </form>
-        )}
-
-        <div style={styles.footer}>
-          <Link to="/login" style={styles.link}>로그인으로 돌아가기</Link>
-        </div>
-      </div>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center space-y-2">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+            <GraduationCap className="h-6 w-6 text-primary" />
+          </div>
+          <CardTitle className="text-xl">계정 활성화</CardTitle>
+          <CardDescription>관리자로부터 등록된 전화번호로 인증번호를 받아 계정을 활성화합니다.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {step === 1 && (
+            <form onSubmit={handleSendOtp} className="space-y-4">
+              {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+              <div className="space-y-2">
+                <Label>전화번호</Label>
+                <Input type="tel" placeholder="010-1234-5678" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>{loading ? '발송 중...' : '인증번호 받기'}</Button>
+            </form>
+          )}
+          {step === 2 && (
+            <form onSubmit={handleActivate} className="space-y-4">
+              {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+              <div className="space-y-2">
+                <Label>인증번호</Label>
+                <Input type="text" placeholder="6자리 숫자" maxLength={6} value={otpCode} onChange={(e) => setOtpCode(e.target.value)} required />
+                <p className="text-xs text-muted-foreground">{phone}으로 발송된 6자리 인증번호를 입력하세요.</p>
+              </div>
+              <div className="space-y-2">
+                <Label>이메일 (로그인 ID)</Label>
+                <Input type="email" placeholder="example@school.ac.kr" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label>비밀번호</Label>
+                <Input type="password" placeholder="영문 대소문자 + 숫자 + 특수문자, 8자 이상" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>{loading ? '처리 중...' : '계정 활성화'}</Button>
+              <Button type="button" variant="outline" className="w-full" onClick={() => { setStep(1); setError(''); }}>전화번호 다시 입력</Button>
+            </form>
+          )}
+        </CardContent>
+        <CardFooter className="justify-center">
+          <Link to="/login" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors">
+            <ArrowLeft className="h-4 w-4" /> 로그인으로 돌아가기
+          </Link>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  card: {
-    backgroundColor: '#fff',
-    padding: '40px',
-    borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    width: '100%',
-    maxWidth: '420px',
-  },
-  title: {
-    margin: '0 0 8px',
-    fontSize: '24px',
-    fontWeight: 600,
-    color: '#1a1a1a',
-  },
-  subtitle: {
-    margin: '0 0 24px',
-    fontSize: '14px',
-    color: '#666',
-    lineHeight: 1.5,
-  },
-  field: {
-    marginBottom: '16px',
-  },
-  label: {
-    display: 'block',
-    marginBottom: '6px',
-    fontSize: '14px',
-    fontWeight: 500,
-    color: '#333',
-  },
-  input: {
-    width: '100%',
-    padding: '10px 12px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '14px',
-    boxSizing: 'border-box',
-  },
-  hint: {
-    display: 'block',
-    marginTop: '4px',
-    fontSize: '12px',
-    color: '#888',
-  },
-  button: {
-    width: '100%',
-    padding: '12px',
-    backgroundColor: '#1976d2',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    fontSize: '15px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    marginBottom: '8px',
-  },
-  linkButton: {
-    width: '100%',
-    padding: '10px',
-    backgroundColor: 'transparent',
-    color: '#666',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '14px',
-    cursor: 'pointer',
-  },
-  error: {
-    color: '#d32f2f',
-    fontSize: '13px',
-    marginBottom: '12px',
-  },
-  footer: {
-    marginTop: '20px',
-    textAlign: 'center',
-  },
-  link: {
-    color: '#1976d2',
-    fontSize: '14px',
-    textDecoration: 'none',
-  },
-};

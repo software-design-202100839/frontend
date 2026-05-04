@@ -1,194 +1,118 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, Check, CheckCheck, Trash2, ExternalLink } from 'lucide-react';
 import { useNotification } from '../../hooks/useNotification';
 import { typeLabels } from '../../services/notificationService';
+import type { NotificationResponse } from '../../services/notificationService';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 type Filter = 'ALL' | 'UNREAD' | 'READ';
 
+function getNotificationLink(n: NotificationResponse): string | null {
+  if (!n.referenceType) return null;
+  switch (n.referenceType) {
+    case 'SCORE': return '/grades';
+    case 'FEEDBACK': return '/feedbacks';
+    case 'RECORD': return '/records';
+    case 'COUNSEL': return '/counselings';
+    default: return null;
+  }
+}
+
 function NotificationPage() {
-  const { notifications, fetchNotifications, markAsRead, markAllAsRead, deleteNotification } =
-    useNotification();
+  const navigate = useNavigate();
+  const { notifications, fetchNotifications, markAsRead, markAllAsRead, deleteNotification } = useNotification();
   const [filter, setFilter] = useState<Filter>('ALL');
 
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
   const filtered = notifications.filter((n) => {
-    if (filter === 'UNREAD') {
-      return !n.isRead;
-    }
-    if (filter === 'READ') {
-      return n.isRead;
-    }
+    if (filter === 'UNREAD') return !n.isRead;
+    if (filter === 'READ') return n.isRead;
     return true;
   });
 
   const unreadExists = notifications.some((n) => !n.isRead);
 
+  const handleClick = async (n: NotificationResponse) => {
+    if (!n.isRead) {
+      await markAsRead(n.id);
+    }
+    const link = getNotificationLink(n);
+    if (link) {
+      navigate(link);
+    }
+  };
+
   return (
-    <div>
-      <div style={styles.toolbar}>
-        <h2 style={styles.title}>알림 센터</h2>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Bell className="h-6 w-6 text-primary" />
+          <h2 className="text-2xl font-bold tracking-tight">알림 센터</h2>
+        </div>
         {unreadExists && (
-          <button onClick={markAllAsRead} style={styles.readAllButton}>
-            모두 읽음 처리
-          </button>
+          <Button variant="outline" size="sm" onClick={markAllAsRead}>
+            <CheckCheck className="mr-1 h-4 w-4" /> 모두 읽음
+          </Button>
         )}
       </div>
-
-      <div style={styles.filterRow}>
+      <div className="flex gap-2">
         {(['ALL', 'UNREAD', 'READ'] as Filter[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            style={{
-              ...styles.filterButton,
-              ...(filter === f ? styles.filterActive : {}),
-            }}
-          >
+          <Button key={f} variant={filter === f ? 'default' : 'outline'} size="sm" onClick={() => setFilter(f)} className="rounded-full">
             {{ ALL: '전체', UNREAD: '미읽음', READ: '읽음' }[f]}
-          </button>
+          </Button>
         ))}
       </div>
-
-      {filtered.length === 0 && <p style={styles.empty}>알림이 없습니다.</p>}
-
-      {filtered.map((n) => (
-        <div
-          key={n.id}
-          style={{
-            ...styles.card,
-            ...(n.isRead ? {} : styles.unreadCard),
-          }}
-          onClick={() => !n.isRead && markAsRead(n.id)}
-        >
-          <div style={styles.cardHeader}>
-            <span style={styles.typeBadge}>{typeLabels[n.type]}</span>
-            <span style={styles.cardTitle}>{n.title}</span>
-            <span style={styles.date}>
-              {new Date(n.createdAt).toLocaleDateString('ko-KR', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                deleteNotification(n.id);
-              }}
-              style={styles.deleteButton}
+      {filtered.length === 0 && <div className="py-16 text-center text-muted-foreground">알림이 없습니다.</div>}
+      <div className="space-y-2">
+        {filtered.map((n) => {
+          const link = getNotificationLink(n);
+          return (
+            <Card
+              key={n.id}
+              className={cn('relative cursor-pointer p-4 transition-colors hover:bg-accent/50', !n.isRead && 'border-primary/30 bg-primary/5')}
+              onClick={() => handleClick(n)}
             >
-              삭제
-            </button>
-          </div>
-          <p style={styles.message}>{n.message}</p>
-          {!n.isRead && <span style={styles.unreadDot} />}
-        </div>
-      ))}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-[10px]">{typeLabels[n.type]}</Badge>
+                    <span className="text-sm font-semibold">{n.title}</span>
+                    {!n.isRead && <span className="h-2 w-2 rounded-full bg-primary" />}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{n.message}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(n.createdAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                    {link && (
+                      <span className="flex items-center gap-1 text-xs text-primary">
+                        <ExternalLink className="h-3 w-3" /> 바로가기
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  {!n.isRead && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); markAsRead(n.id); }} title="읽음 처리">
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); deleteNotification(n.id); }} title="삭제">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  toolbar: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px',
-  },
-  title: { margin: 0 },
-  readAllButton: {
-    padding: '8px 16px',
-    backgroundColor: '#4a90d9',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '13px',
-  },
-  filterRow: {
-    display: 'flex',
-    gap: '8px',
-    marginBottom: '16px',
-  },
-  filterButton: {
-    padding: '6px 16px',
-    border: '1px solid #ddd',
-    borderRadius: '20px',
-    backgroundColor: '#fff',
-    cursor: 'pointer',
-    fontSize: '13px',
-    color: '#666',
-  },
-  filterActive: {
-    backgroundColor: '#4a90d9',
-    color: '#fff',
-    borderColor: '#4a90d9',
-  },
-  empty: { textAlign: 'center', color: '#999', padding: '40px' },
-  card: {
-    position: 'relative',
-    backgroundColor: '#fff',
-    padding: '16px',
-    borderRadius: '8px',
-    border: '1px solid #e5e5e5',
-    marginBottom: '8px',
-    cursor: 'pointer',
-  },
-  unreadCard: {
-    backgroundColor: '#f0f7ff',
-    borderColor: '#b8d4f0',
-  },
-  cardHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '6px',
-  },
-  typeBadge: {
-    padding: '2px 8px',
-    backgroundColor: '#e8f0fe',
-    color: '#4a90d9',
-    borderRadius: '4px',
-    fontSize: '11px',
-    fontWeight: 'bold',
-  },
-  cardTitle: {
-    flex: 1,
-    fontSize: '14px',
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  date: {
-    fontSize: '12px',
-    color: '#999',
-  },
-  deleteButton: {
-    padding: '4px 8px',
-    backgroundColor: '#ff4d4f',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '11px',
-  },
-  message: {
-    margin: 0,
-    fontSize: '13px',
-    color: '#666',
-    lineHeight: '1.5',
-  },
-  unreadDot: {
-    position: 'absolute',
-    top: '16px',
-    right: '16px',
-    width: '8px',
-    height: '8px',
-    backgroundColor: '#4a90d9',
-    borderRadius: '50%',
-  },
-};
 
 export default NotificationPage;

@@ -41,6 +41,7 @@ export interface UserInfo {
   name: string;
   role: 'ADMIN' | 'TEACHER' | 'STUDENT' | 'PARENT';
   roleEntityId?: number;
+  children?: Array<{ id: number; name: string }>;
   roleDetail?: {
     // TEACHER
     department?: string;
@@ -63,8 +64,6 @@ export interface UserInfo {
       classNum: number;
       studentNum: number;
     };
-    // PARENT
-    children?: Array<{ id: number; name: string }>;
   };
 }
 

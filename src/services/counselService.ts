@@ -1,7 +1,7 @@
 import api from './api';
 import type { ApiResponse } from './authService';
 
-export type CounselCategory = 'HOMEROOM' | 'CAREER' | 'LIFE' | 'PROFESSIONAL' | 'OTHER';
+export type CounselCategory = 'ACADEMIC' | 'CAREER' | 'BEHAVIOR' | 'PERSONAL' | 'OTHER';
 
 export interface CounselingResponse {
   id: number;
@@ -14,7 +14,6 @@ export interface CounselingResponse {
   content: string;
   nextPlan: string | null;
   nextCounselDate: string | null;
-  isShared: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -26,7 +25,6 @@ export interface CounselingRequest {
   content: string;
   nextPlan?: string;
   nextCounselDate?: string;
-  isShared: boolean;
 }
 
 export interface CounselingUpdateRequest {
@@ -35,14 +33,13 @@ export interface CounselingUpdateRequest {
   content: string;
   nextPlan?: string;
   nextCounselDate?: string;
-  isShared: boolean;
 }
 
 const categoryLabels: Record<CounselCategory, string> = {
-  HOMEROOM: '담임상담',
+  ACADEMIC: '학업',
   CAREER: '진로',
-  LIFE: '생활지도',
-  PROFESSIONAL: '전문상담',
+  BEHAVIOR: '행동',
+  PERSONAL: '개인',
   OTHER: '기타',
 };
 
@@ -64,9 +61,14 @@ const counselService = {
     return data.data;
   },
 
-  async getSharedCounselings(studentId: number): Promise<CounselingResponse[]> {
+  async searchCounselings(
+    studentId: number,
+    startDate: string,
+    endDate: string,
+  ): Promise<CounselingResponse[]> {
     const { data } = await api.get<ApiResponse<CounselingResponse[]>>(
-      `/counselings/students/${studentId}/shared`,
+      `/counselings/students/${studentId}/search`,
+      { params: { startDate, endDate } },
     );
     return data.data;
   },

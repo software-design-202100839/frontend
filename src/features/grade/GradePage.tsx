@@ -1,10 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
 import gradeService from '../../services/gradeService';
 import type { StudentInfo, StudentScoreSummary, Subject } from '../../services/gradeService';
-import { formatStudentLabel } from '../../types/student';
 import authService from '../../services/authService';
 import ScoreForm from './ScoreForm';
 import ScoreRadarChart from './ScoreRadarChart';
+import StudentSelector from '@/components/StudentSelector';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 function GradePage() {
   const [students, setStudents] = useState<StudentInfo[]>([]);
@@ -18,248 +23,135 @@ function GradePage() {
 
   const user = authService.getStoredUser();
   const isTeacher = user?.role === 'TEACHER';
+  const isStudent = user?.role === 'STUDENT';
+  const isParent = user?.role === 'PARENT';
+  const children = user?.children ?? [];
 
   useEffect(() => {
     gradeService.getSubjects().then(setSubjects);
     if (isTeacher) {
       gradeService.getStudents().then(setStudents);
-    } else if (user?.roleEntityId) {
+    } else if (isStudent && user?.roleEntityId) {
       setSelectedStudentId(user.roleEntityId);
+    } else if (isParent && children.length > 0) {
+      setSelectedStudentId(children[0].id);
     }
   }, []);
 
   const loadScores = useCallback(async () => {
-    if (!selectedStudentId) {
-      return;
-    }
+    if (!selectedStudentId) return;
     setLoading(true);
     try {
       const data = await gradeService.getStudentScores(selectedStudentId, year, semester);
       setSummary(data);
-    } catch {
-      setSummary(null);
-    } finally {
-      setLoading(false);
-    }
+    } catch { setSummary(null); }
+    finally { setLoading(false); }
   }, [selectedStudentId, year, semester]);
 
-  useEffect(() => {
-    if (selectedStudentId) {
-      loadScores();
-    }
-  }, [selectedStudentId, year, semester, loadScores]);
-
-  const handleScoreCreated = () => {
-    setShowForm(false);
-    loadScores();
-  };
+  useEffect(() => { if (selectedStudentId) loadScores(); }, [selectedStudentId, year, semester, loadScores]);
 
   const handleDelete = async (scoreId: number) => {
-    if (!confirm('성적을 삭제하시겠습니까?')) {
-      return;
-    }
+    if (!confirm('성적을 삭제하시겠습니까?')) return;
     await gradeService.deleteScore(scoreId);
     loadScores();
   };
 
   return (
-    <div>
-      <div style={styles.toolbar}>
-        <h2 style={styles.title}>성적 관리</h2>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold tracking-tight">성적 관리</h2>
         {isTeacher && (
-          <button onClick={() => setShowForm(!showForm)} style={styles.addButton}>
-            {showForm ? '취소' : '+ 성적 등록'}
-          </button>
+          <Button onClick={() => setShowForm(!showForm)}>
+            {showForm ? '취소' : <><Plus className="mr-1 h-4 w-4" /> 성적 등록</>}
+          </Button>
         )}
       </div>
 
-      {showForm && (
-        <ScoreForm students={students} subjects={subjects} onSuccess={handleScoreCreated} />
-      )}
+      {showForm && <ScoreForm students={students} subjects={subjects} onSuccess={() => { setShowForm(false); loadScores(); }} />}
 
-      <div style={styles.filterRow}>
-        {isTeacher && (
-          <select
-            value={selectedStudentId ?? ''}
-            onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)}
-            style={styles.select}
-          >
-            <option value="">학생 선택</option>
-            {students.map((s) => (
-              <option key={s.id} value={s.id}>
-                {formatStudentLabel(s, year)}
-              </option>
-            ))}
-          </select>
-        )}
-
-        <select
-          value={year}
-          onChange={(e) => setYear(Number(e.target.value))}
-          style={styles.select}
-        >
-          {[2024, 2025, 2026].map((y) => (
-            <option key={y} value={y}>
-              {y}년
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={semester}
-          onChange={(e) => setSemester(Number(e.target.value))}
-          style={styles.select}
-        >
+      <div className="flex flex-wrap gap-3">
+        <Select value={year.toString()} onChange={(e) => setYear(Number(e.target.value))} className="w-28">
+          {[2024, 2025, 2026].map((y) => <option key={y} value={y}>{y}년</option>)}
+        </Select>
+        <Select value={semester.toString()} onChange={(e) => setSemester(Number(e.target.value))} className="w-24">
           <option value={1}>1학기</option>
           <option value={2}>2학기</option>
-        </select>
+        </Select>
       </div>
 
-      {loading && <p style={styles.loading}>로딩 중...</p>}
+      {isTeacher && (
+        <StudentSelector students={students} selectedStudentId={selectedStudentId} year={year} onSelect={setSelectedStudentId} />
+      )}
+      {isParent && children.length > 1 && (
+        <Select value={selectedStudentId?.toString() ?? ''} onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)} className="w-40">
+          {children.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </Select>
+      )}
+
+      {loading && <div className="py-10 text-center text-muted-foreground">로딩 중...</div>}
 
       {summary && summary.scores.length > 0 && (
         <>
-          <div style={styles.summaryCard}>
-            <h3>
-              {summary.studentName}의 {summary.year}년 {summary.semester}학기 성적
-            </h3>
-            <div style={styles.summaryStats}>
-              <div style={styles.stat}>
-                <span style={styles.statLabel}>총점</span>
-                <span style={styles.statValue}>{summary.totalScore}</span>
-              </div>
-              <div style={styles.stat}>
-                <span style={styles.statLabel}>평균</span>
-                <span style={styles.statValue}>{summary.averageScore}</span>
-              </div>
-              <div style={styles.stat}>
-                <span style={styles.statLabel}>평균 등급</span>
-                <span style={styles.statValue}>{summary.averageGradeLetter}</span>
-              </div>
-            </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              { label: '총점', value: summary.totalScore },
+              { label: '평균', value: summary.averageScore },
+              { label: '평균 등급', value: summary.averageGradeLetter },
+            ].map((s) => (
+              <Card key={s.label}>
+                <CardContent className="pt-6 text-center">
+                  <p className="text-sm text-muted-foreground">{s.label}</p>
+                  <p className="text-3xl font-bold text-primary">{s.value}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           <ScoreRadarChart scores={summary.scores} />
 
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>과목</th>
-                <th style={styles.th}>점수</th>
-                <th style={styles.th}>등급</th>
-                <th style={styles.th}>석차</th>
-                {isTeacher && <th style={styles.th}>관리</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {summary.scores.map((s) => (
-                <tr key={s.id}>
-                  <td style={styles.td}>{s.subjectName}</td>
-                  <td style={styles.td}>{s.score}</td>
-                  <td style={styles.td}>{s.gradeLetter}</td>
-                  <td style={styles.td}>{s.rank ?? '-'}</td>
-                  {isTeacher && (
-                    <td style={styles.td}>
-                      <button onClick={() => handleDelete(s.id)} style={styles.deleteButton}>
-                        삭제
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{summary.studentName}의 {summary.year}년 {summary.semester}학기 성적</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>과목</TableHead>
+                    <TableHead>점수</TableHead>
+                    <TableHead>등급</TableHead>
+                    <TableHead>석차</TableHead>
+                    {isTeacher && <TableHead className="w-20">관리</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {summary.scores.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="font-medium">{s.subjectName}</TableCell>
+                      <TableCell>{s.score}</TableCell>
+                      <TableCell>{s.gradeLetter}</TableCell>
+                      <TableCell>{s.rank ?? '-'}</TableCell>
+                      {isTeacher && (
+                        <TableCell>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(s.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </>
       )}
 
       {summary && summary.scores.length === 0 && (
-        <p style={styles.empty}>등록된 성적이 없습니다.</p>
+        <div className="py-16 text-center text-muted-foreground">등록된 성적이 없습니다.</div>
       )}
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  toolbar: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px',
-  },
-  title: { margin: 0 },
-  addButton: {
-    padding: '8px 16px',
-    backgroundColor: '#4a90d9',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-  },
-  filterRow: {
-    display: 'flex',
-    gap: '12px',
-    marginBottom: '20px',
-  },
-  select: {
-    padding: '8px 12px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '14px',
-  },
-  loading: { color: '#999', textAlign: 'center' },
-  summaryCard: {
-    backgroundColor: '#fff',
-    padding: '20px',
-    borderRadius: '8px',
-    border: '1px solid #e5e5e5',
-    marginBottom: '20px',
-  },
-  summaryStats: {
-    display: 'flex',
-    gap: '32px',
-    marginTop: '12px',
-  },
-  stat: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  statLabel: { fontSize: '12px', color: '#999' },
-  statValue: { fontSize: '24px', fontWeight: 'bold', color: '#333' },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    backgroundColor: '#fff',
-    borderRadius: '8px',
-    overflow: 'hidden',
-  },
-  th: {
-    padding: '12px',
-    backgroundColor: '#f8f9fa',
-    borderBottom: '2px solid #e5e5e5',
-    textAlign: 'left',
-    fontSize: '13px',
-    color: '#666',
-  },
-  td: {
-    padding: '12px',
-    borderBottom: '1px solid #f0f0f0',
-    fontSize: '14px',
-  },
-  deleteButton: {
-    padding: '4px 8px',
-    backgroundColor: '#ff4d4f',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px',
-  },
-  empty: {
-    textAlign: 'center',
-    color: '#999',
-    padding: '40px',
-  },
-};
 
 export default GradePage;

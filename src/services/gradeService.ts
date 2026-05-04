@@ -79,6 +79,11 @@ const gradeService = {
     await api.delete(`/grades/${scoreId}`);
   },
 
+  async getScore(scoreId: number): Promise<ScoreResponse> {
+    const { data } = await api.get<ApiResponse<ScoreResponse>>(`/grades/${scoreId}`);
+    return data.data;
+  },
+
   async getStudents(): Promise<StudentInfo[]> {
     const { data } = await api.get<ApiResponse<StudentInfo[]>>('/students');
     return data.data;

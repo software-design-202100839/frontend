@@ -1,15 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Plus, Edit, Trash2, Search, RotateCcw } from 'lucide-react';
 import gradeService from '../../services/gradeService';
 import counselService from '../../services/counselService';
 import type { StudentInfo } from '../../services/gradeService';
 import { formatStudentLabel } from '../../types/student';
+import StudentSelector from '@/components/StudentSelector';
 
 const CURRENT_YEAR = new Date().getFullYear();
 import type { CounselingResponse, CounselCategory } from '../../services/counselService';
 import authService from '../../services/authService';
 import CounselingForm from './CounselingForm';
 
-const categories: CounselCategory[] = ['HOMEROOM', 'CAREER', 'LIFE', 'PROFESSIONAL', 'OTHER'];
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+
+const categories: CounselCategory[] = ['ACADEMIC', 'CAREER', 'BEHAVIOR', 'PERSONAL', 'OTHER'];
 
 function CounselingPage() {
   const [students, setStudents] = useState<StudentInfo[]>([]);
@@ -19,9 +27,14 @@ function CounselingPage() {
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<CounselingResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [searchStartDate, setSearchStartDate] = useState('');
+  const [searchEndDate, setSearchEndDate] = useState('');
+  const [isSearchMode, setIsSearchMode] = useState(false);
 
   const user = authService.getStoredUser();
   const isTeacher = user?.role === 'TEACHER';
+  const isAdmin = user?.role === 'ADMIN';
+  const canSearch = isTeacher || isAdmin;
 
   useEffect(() => {
     if (isTeacher) {
@@ -79,19 +92,44 @@ function CounselingPage() {
     setEditTarget(null);
   };
 
+  const handleSearch = async () => {
+    if (!selectedStudentId || !searchStartDate || !searchEndDate) return;
+    setLoading(true);
+    try {
+      const data = await counselService.searchCounselings(
+        selectedStudentId,
+        searchStartDate,
+        searchEndDate,
+      );
+      setCounselings(data);
+      setIsSearchMode(true);
+    } catch {
+      setCounselings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetSearch = () => {
+    setSearchStartDate('');
+    setSearchEndDate('');
+    setIsSearchMode(false);
+    loadCounselings();
+  };
+
   const selectedStudent = students.find((s) => s.id === selectedStudentId);
 
   return (
-    <div>
-      <div style={styles.toolbar}>
-        <h2 style={styles.title}>상담내역 관리</h2>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">상담내역 관리</h2>
         {isTeacher && (
-          <button
+          <Button
             onClick={() => (showForm ? handleCancel() : setShowForm(true))}
-            style={styles.addButton}
+            variant={showForm ? 'outline' : 'default'}
           >
-            {showForm ? '취소' : '+ 상담 기록'}
-          </button>
+            {showForm ? '취소' : <><Plus className="h-4 w-4" /> 상담 기록</>}
+          </Button>
         )}
       </div>
 
@@ -99,195 +137,94 @@ function CounselingPage() {
         <CounselingForm students={students} editTarget={editTarget} onSuccess={handleCreated} />
       )}
 
-      <div style={styles.filterRow}>
-        {isTeacher && (
-          <select
-            value={selectedStudentId ?? ''}
-            onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)}
-            style={styles.select}
-          >
-            <option value="">학생 선택</option>
-            {students.map((s) => (
-              <option key={s.id} value={s.id}>
-                {formatStudentLabel(s, CURRENT_YEAR)}
-              </option>
-            ))}
-          </select>
-        )}
-
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value as CounselCategory | '')}
-          style={styles.select}
-        >
+      <div className="flex flex-wrap gap-3">
+        <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value as CounselCategory | '')} className="w-auto">
           <option value="">전체 카테고리</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>
-              {counselService.categoryLabels[c]}
-            </option>
-          ))}
-        </select>
+          {categories.map((c) => <option key={c} value={c}>{counselService.categoryLabels[c]}</option>)}
+        </Select>
       </div>
 
+      {isTeacher && (
+        <StudentSelector students={students} selectedStudentId={selectedStudentId} year={CURRENT_YEAR} onSelect={setSelectedStudentId} />
+      )}
+
+      {canSearch && selectedStudentId && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            type="date"
+            value={searchStartDate}
+            onChange={(e) => setSearchStartDate(e.target.value)}
+            className="w-auto"
+          />
+          <span className="text-sm text-muted-foreground">~</span>
+          <Input
+            type="date"
+            value={searchEndDate}
+            onChange={(e) => setSearchEndDate(e.target.value)}
+            className="w-auto"
+          />
+          <Button
+            onClick={handleSearch}
+            disabled={!searchStartDate || !searchEndDate}
+            size="sm"
+          >
+            <Search className="h-4 w-4" /> 기간 검색
+          </Button>
+          {isSearchMode && (
+            <Button onClick={handleResetSearch} variant="outline" size="sm">
+              <RotateCcw className="h-4 w-4" /> 전체 보기
+            </Button>
+          )}
+        </div>
+      )}
+
       {selectedStudent && (
-        <div style={styles.studentInfo}>
+        <div className="rounded-md bg-muted px-4 py-3 text-sm">
           <strong>{formatStudentLabel(selectedStudent, CURRENT_YEAR)}</strong>
         </div>
       )}
 
-      {loading && <p style={styles.loading}>로딩 중...</p>}
+      {loading && <p className="text-center text-muted-foreground">로딩 중...</p>}
 
       {!loading && counselings.length === 0 && selectedStudentId && (
-        <p style={styles.empty}>등록된 상담내역이 없습니다.</p>
+        <p className="py-10 text-center text-muted-foreground">등록된 상담내역이 없습니다.</p>
       )}
 
-      {counselings.map((c) => (
-        <div key={c.id} style={styles.card}>
-          <div style={styles.cardHeader}>
-            <span style={styles.badge}>{counselService.categoryLabels[c.category]}</span>
-            <span style={styles.counselDate}>{c.counselDate}</span>
-            <span style={styles.teacher}>{c.teacherName}</span>
-            {c.isShared && <span style={styles.sharedTag}>공유</span>}
-            {isTeacher && c.teacherId === user?.roleEntityId && (
-              <div style={styles.actions}>
-                <button onClick={() => handleEdit(c)} style={styles.editButton}>
-                  수정
-                </button>
-                <button onClick={() => handleDelete(c.id)} style={styles.deleteButton}>
-                  삭제
-                </button>
+      <div className="space-y-3">
+        {counselings.map((c) => (
+          <Card key={c.id}>
+            <CardContent className="p-4">
+              <div className="mb-2 flex flex-wrap items-center gap-3">
+                <Badge variant="secondary">{counselService.categoryLabels[c.category]}</Badge>
+                <span className="text-sm font-semibold text-foreground">{c.counselDate}</span>
+                <span className="text-sm text-muted-foreground">{c.teacherName}</span>
+                <Badge variant="secondary">교사 공유</Badge>
+                {isTeacher && c.teacherId === user?.roleEntityId && (
+                  <div className="ml-auto flex gap-2">
+                    <Button onClick={() => handleEdit(c)} variant="outline" size="sm">
+                      <Edit className="h-3.5 w-3.5" /> 수정
+                    </Button>
+                    <Button onClick={() => handleDelete(c.id)} variant="destructive" size="sm">
+                      <Trash2 className="h-3.5 w-3.5" /> 삭제
+                    </Button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <p style={styles.content}>{c.content}</p>
-          {c.nextPlan && (
-            <div style={styles.nextPlan}>
-              <strong>후속 계획:</strong> {c.nextPlan}
-            </div>
-          )}
-          {c.nextCounselDate && (
-            <div style={styles.nextDate}>다음 상담 예정: {c.nextCounselDate}</div>
-          )}
-        </div>
-      ))}
+              <p className="mb-2 text-sm leading-relaxed text-foreground">{c.content}</p>
+              {c.nextPlan && (
+                <div className="mb-1 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+                  <strong>후속 계획:</strong> {c.nextPlan}
+                </div>
+              )}
+              {c.nextCounselDate && (
+                <p className="text-xs font-semibold text-primary">다음 상담 예정: {c.nextCounselDate}</p>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  toolbar: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px',
-  },
-  title: { margin: 0 },
-  addButton: {
-    padding: '8px 16px',
-    backgroundColor: '#4a90d9',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-  },
-  filterRow: {
-    display: 'flex',
-    gap: '12px',
-    marginBottom: '16px',
-    flexWrap: 'wrap' as const,
-  },
-  select: {
-    padding: '8px 12px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '14px',
-  },
-  studentInfo: {
-    padding: '12px 16px',
-    backgroundColor: '#f8f9fa',
-    borderRadius: '4px',
-    marginBottom: '16px',
-    fontSize: '14px',
-  },
-  loading: { color: '#999', textAlign: 'center' },
-  empty: { textAlign: 'center', color: '#999', padding: '40px' },
-  card: {
-    backgroundColor: '#fff',
-    padding: '16px',
-    borderRadius: '8px',
-    border: '1px solid #e5e5e5',
-    marginBottom: '12px',
-  },
-  cardHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginBottom: '8px',
-  },
-  badge: {
-    padding: '2px 8px',
-    backgroundColor: '#e8f0fe',
-    color: '#4a90d9',
-    borderRadius: '4px',
-    fontSize: '12px',
-    fontWeight: 'bold',
-  },
-  counselDate: {
-    fontSize: '13px',
-    color: '#333',
-    fontWeight: 'bold',
-  },
-  teacher: { fontSize: '13px', color: '#666' },
-  sharedTag: {
-    padding: '2px 8px',
-    backgroundColor: '#fff7e6',
-    color: '#fa8c16',
-    borderRadius: '4px',
-    fontSize: '11px',
-    fontWeight: 'bold',
-  },
-  actions: {
-    marginLeft: 'auto',
-    display: 'flex',
-    gap: '8px',
-  },
-  editButton: {
-    padding: '4px 8px',
-    backgroundColor: '#fff',
-    color: '#4a90d9',
-    border: '1px solid #4a90d9',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px',
-  },
-  deleteButton: {
-    padding: '4px 8px',
-    backgroundColor: '#ff4d4f',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px',
-  },
-  content: {
-    margin: '0 0 8px',
-    fontSize: '14px',
-    lineHeight: '1.6',
-    color: '#333',
-  },
-  nextPlan: {
-    padding: '8px 12px',
-    backgroundColor: '#f8f9fa',
-    borderRadius: '4px',
-    fontSize: '13px',
-    color: '#555',
-    marginBottom: '4px',
-  },
-  nextDate: {
-    fontSize: '12px',
-    color: '#4a90d9',
-    fontWeight: 'bold',
-  },
-};
 
 export default CounselingPage;
