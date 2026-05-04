@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { BarChart3, MessageSquare, Bell } from 'lucide-react';
 import authService from '../../services/authService';
 import notificationService from '../../services/notificationService';
 import type { NotificationResponse } from '../../services/notificationService';
 import { typeLabels } from '../../services/notificationService';
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 function ParentDashboardPage() {
   const user = authService.getStoredUser();
@@ -33,252 +39,162 @@ function ParentDashboardPage() {
   const feedbackNotifications = recentNotifications.filter((n) => n.type === 'FEEDBACK_NEW');
 
   return (
-    <div>
-      <h2>학부모 대시보드</h2>
-      <p>환영합니다, {user?.name}님.</p>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-semibold">학부모 대시보드</h2>
+        <p className="text-sm text-muted-foreground">환영합니다, {user?.name}님.</p>
+      </div>
 
       {/* 자녀 선택 드롭다운 */}
       {children.length > 0 ? (
-        <div style={styles.childSelector}>
-          <label style={styles.childLabel}>자녀 선택</label>
-          <select
-            style={styles.childSelect}
-            value={selectedChildId ?? ''}
-            onChange={e => setSelectedChildId(Number(e.target.value))}
-          >
-            {children.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-        </div>
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardContent className="flex items-center gap-3 p-4">
+            <label className="text-sm font-semibold whitespace-nowrap">자녀 선택</label>
+            <Select
+              value={selectedChildId ?? ''}
+              onChange={e => setSelectedChildId(Number(e.target.value))}
+              className="w-auto min-w-[160px]"
+            >
+              {children.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </Select>
+          </CardContent>
+        </Card>
       ) : (
-        <div style={styles.noChildBanner}>
-          등록된 자녀가 없습니다. 관리자에게 자녀 연결을 요청하세요.
-        </div>
+        <Card className="border-orange-300 bg-orange-50">
+          <CardContent className="p-4 text-sm text-orange-800">
+            등록된 자녀가 없습니다. 관리자에게 자녀 연결을 요청하세요.
+          </CardContent>
+        </Card>
       )}
 
       {/* 자녀별 바로가기 */}
       {selectedChild && (
-        <div style={styles.cardGrid}>
-          <Link
-            to={`/grades?studentId=${selectedChildId}`}
-            style={styles.card}
-          >
-            <h3 style={styles.cardTitle}>📊 {selectedChild.name} 성적</h3>
-            <p style={styles.cardDesc}>과목별 성적 및 등급 조회</p>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
+          <Link to={`/grades?studentId=${selectedChildId}`} className="no-underline">
+            <Card className="h-full transition-colors hover:bg-muted/50">
+              <CardHeader className="p-5">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <BarChart3 className="h-4 w-4" /> {selectedChild.name} 성적
+                </CardTitle>
+                <CardDescription>과목별 성적 및 등급 조회</CardDescription>
+              </CardHeader>
+            </Card>
           </Link>
 
-          <Link
-            to={`/feedbacks?studentId=${selectedChildId}`}
-            style={styles.card}
-          >
-            <h3 style={styles.cardTitle}>💬 {selectedChild.name} 피드백</h3>
-            <p style={styles.cardDesc}>선생님이 남긴 피드백 확인</p>
+          <Link to={`/feedbacks?studentId=${selectedChildId}`} className="no-underline">
+            <Card className="h-full transition-colors hover:bg-muted/50">
+              <CardHeader className="p-5">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <MessageSquare className="h-4 w-4" /> {selectedChild.name} 피드백
+                </CardTitle>
+                <CardDescription>선생님이 남긴 피드백 확인</CardDescription>
+              </CardHeader>
+            </Card>
           </Link>
 
-          <Link to="/notifications" style={styles.card}>
-            <h3 style={styles.cardTitle}>🔔 알림 센터</h3>
-            <p style={styles.cardDesc}>모든 알림 확인</p>
+          <Link to="/notifications" className="no-underline">
+            <Card className="h-full transition-colors hover:bg-muted/50">
+              <CardHeader className="p-5">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Bell className="h-4 w-4" /> 알림 센터
+                </CardTitle>
+                <CardDescription>모든 알림 확인</CardDescription>
+              </CardHeader>
+            </Card>
           </Link>
         </div>
       )}
 
       {/* 최근 알림 요약 */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>최근 알림</h3>
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">최근 알림</h3>
 
         {children.length > 0 && (
-          <div style={styles.notifRow}>
-            <div style={styles.notifCol}>
-              <h4 style={styles.notifColTitle}>성적 알림</h4>
-              {loading ? (
-                <p style={styles.cardDesc}>로딩 중...</p>
-              ) : scoreNotifications.length > 0 ? (
-                scoreNotifications.map((n) => (
-                  <div key={n.id} style={styles.notifItem}>
-                    <span style={styles.notifTitle}>{n.title}</span>
-                    <span style={styles.notifDate}>
-                      {new Date(n.createdAt).toLocaleDateString('ko-KR')}
-                    </span>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-muted-foreground">성적 알림</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <p className="text-sm text-muted-foreground">로딩 중...</p>
+                ) : scoreNotifications.length > 0 ? (
+                  <div className="space-y-1">
+                    {scoreNotifications.map((n) => (
+                      <div key={n.id} className="flex items-center justify-between border-b border-border/50 py-1.5 last:border-0">
+                        <span className="text-sm">{n.title}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(n.createdAt).toLocaleDateString('ko-KR')}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))
-              ) : (
-                <p style={styles.cardDesc}>최근 성적 알림이 없습니다.</p>
-              )}
-            </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">최근 성적 알림이 없습니다.</p>
+                )}
+              </CardContent>
+            </Card>
 
-            <div style={styles.notifCol}>
-              <h4 style={styles.notifColTitle}>피드백 알림</h4>
-              {loading ? (
-                <p style={styles.cardDesc}>로딩 중...</p>
-              ) : feedbackNotifications.length > 0 ? (
-                feedbackNotifications.map((n) => (
-                  <div key={n.id} style={styles.notifItem}>
-                    <span style={styles.notifTitle}>{n.title}</span>
-                    <span style={styles.notifDate}>
-                      {new Date(n.createdAt).toLocaleDateString('ko-KR')}
-                    </span>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-muted-foreground">피드백 알림</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <p className="text-sm text-muted-foreground">로딩 중...</p>
+                ) : feedbackNotifications.length > 0 ? (
+                  <div className="space-y-1">
+                    {feedbackNotifications.map((n) => (
+                      <div key={n.id} className="flex items-center justify-between border-b border-border/50 py-1.5 last:border-0">
+                        <span className="text-sm">{n.title}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(n.createdAt).toLocaleDateString('ko-KR')}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))
-              ) : (
-                <p style={styles.cardDesc}>최근 피드백 알림이 없습니다.</p>
-              )}
-            </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">최근 피드백 알림이 없습니다.</p>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
 
-        {loading && <p style={styles.loading}>로딩 중...</p>}
+        {loading && <p className="text-center text-muted-foreground">로딩 중...</p>}
         {!loading && recentNotifications.length === 0 && (
-          <p style={styles.empty}>알림이 없습니다.</p>
+          <p className="py-5 text-center text-muted-foreground">알림이 없습니다.</p>
         )}
-        {recentNotifications.map((n) => (
-          <div key={n.id} style={{ ...styles.notifCard, ...(n.isRead ? {} : styles.unread) }}>
-            <div style={styles.notifHeader}>
-              <span style={styles.typeBadge}>{typeLabels[n.type]}</span>
-              <span style={styles.notifCardTitle}>{n.title}</span>
-              <span style={styles.notifDate}>
-                {new Date(n.createdAt).toLocaleDateString('ko-KR', {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </span>
-            </div>
-            <p style={styles.notifMessage}>{n.message}</p>
-          </div>
-        ))}
+
+        <div className="space-y-2">
+          {recentNotifications.map((n) => (
+            <Card
+              key={n.id}
+              className={cn(!n.isRead && 'border-blue-200 bg-blue-50/50')}
+            >
+              <CardContent className="p-4">
+                <div className="mb-1 flex items-center gap-2.5">
+                  <Badge variant="secondary">{typeLabels[n.type]}</Badge>
+                  <span className="flex-1 text-sm font-semibold">{n.title}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(n.createdAt).toLocaleDateString('ko-KR', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">{n.message}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  childSelector: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 20,
-    padding: '12px 16px',
-    backgroundColor: '#f0f7ff',
-    borderRadius: 8,
-    border: '1px solid #b8d4f0',
-  },
-  childLabel: {
-    fontSize: 14,
-    fontWeight: 600,
-    color: '#333',
-    whiteSpace: 'nowrap',
-  },
-  childSelect: {
-    padding: '6px 12px',
-    border: '1px solid #b8d4f0',
-    borderRadius: 4,
-    fontSize: 14,
-    backgroundColor: '#fff',
-    minWidth: 160,
-  },
-  noChildBanner: {
-    padding: '12px 16px',
-    backgroundColor: '#fff3e0',
-    border: '1px solid #ffcc80',
-    borderRadius: 8,
-    fontSize: 14,
-    color: '#e65100',
-    marginBottom: 20,
-  },
-  cardGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-    gap: 16,
-    marginBottom: 32,
-  },
-  card: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 8,
-    border: '1px solid #e5e5e5',
-    textDecoration: 'none',
-    color: 'inherit',
-    display: 'block',
-  },
-  cardTitle: {
-    margin: '0 0 8px',
-    fontSize: 15,
-    color: '#333',
-  },
-  cardDesc: {
-    margin: 0,
-    fontSize: 13,
-    color: '#999',
-  },
-  section: { marginTop: 8 },
-  sectionTitle: { fontSize: 17, marginBottom: 16 },
-  notifRow: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 16,
-    marginBottom: 24,
-  },
-  notifCol: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 8,
-    border: '1px solid #e5e5e5',
-  },
-  notifColTitle: {
-    margin: '0 0 12px',
-    fontSize: 14,
-    fontWeight: 600,
-    color: '#444',
-  },
-  notifItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '6px 0',
-    borderBottom: '1px solid #f0f0f0',
-  },
-  notifTitle: { fontSize: 13, color: '#333' },
-  notifDate: { fontSize: 11, color: '#999' },
-  loading: { color: '#999', textAlign: 'center' },
-  empty: { textAlign: 'center', color: '#999', padding: 20 },
-  notifCard: {
-    backgroundColor: '#fff',
-    padding: '12px 16px',
-    borderRadius: 8,
-    border: '1px solid #e5e5e5',
-    marginBottom: 8,
-  },
-  unread: {
-    backgroundColor: '#f0f7ff',
-    borderColor: '#b8d4f0',
-  },
-  notifHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 4,
-  },
-  typeBadge: {
-    padding: '2px 8px',
-    backgroundColor: '#e8f0fe',
-    color: '#4a90d9',
-    borderRadius: 4,
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  notifCardTitle: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  notifMessage: {
-    margin: 0,
-    fontSize: 13,
-    color: '#666',
-  },
-};
 
 export default ParentDashboardPage;

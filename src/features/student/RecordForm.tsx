@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import studentService from '../../services/studentService';
-import type { RecordType, BasicCategory } from '../../services/studentService';
+import type { RecordType, BasicCategory, StudentRecord } from '../../services/studentService';
 import type { Subject } from '../../services/gradeService';
-import authService from '../../services/authService';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Props {
   studentId: number;
   subjects: Subject[];
+  editTarget?: StudentRecord | null;
   onSuccess: () => void;
 }
 
@@ -17,18 +22,28 @@ const basicCategories: { value: BasicCategory; label: string }[] = [
   { value: 'VOLUNTEER', label: '봉사활동' },
 ];
 
-function RecordForm({ studentId, subjects, onSuccess }: Props) {
-  const user = authService.getStoredUser();
-  const isHomeroom = user?.roleDetail?.currentClass?.isHomeroom ?? false;
+function RecordForm({ studentId, subjects, editTarget, onSuccess }: Props) {
+  const isEdit = !!editTarget;
 
-  const [year, setYear] = useState(2026);
-  const [semester, setSemester] = useState(1);
-  const [recordType, setRecordType] = useState<RecordType>(isHomeroom ? 'BASIC' : 'SPECIAL');
-  const [basicCategory, setBasicCategory] = useState<BasicCategory>('ATTENDANCE');
-  const [subjectId, setSubjectId] = useState<number | ''>(subjects[0]?.id ?? '');
-  const [content, setContent] = useState('');
-  const [isVisibleToStudent, setIsVisibleToStudent] = useState(false);
-  const [isVisibleToParent, setIsVisibleToParent] = useState(false);
+  const initialContent =
+    editTarget && typeof editTarget.content.text === 'string' ? editTarget.content.text : '';
+
+  const [year, setYear] = useState(editTarget?.year ?? 2026);
+  const [semester, setSemester] = useState(editTarget?.semester ?? 1);
+  const [recordType, setRecordType] = useState<RecordType>(
+    editTarget?.recordType ?? 'BASIC',
+  );
+  const [basicCategory, setBasicCategory] = useState<BasicCategory>(
+    (editTarget?.category as BasicCategory) ?? 'ATTENDANCE',
+  );
+  const [subjectId, setSubjectId] = useState<number | ''>(editTarget?.subjectId ?? subjects[0]?.id ?? '');
+  const [content, setContent] = useState(initialContent);
+  const [isVisibleToStudent, setIsVisibleToStudent] = useState(
+    editTarget?.isVisibleToStudent ?? false,
+  );
+  const [isVisibleToParent, setIsVisibleToParent] = useState(
+    editTarget?.isVisibleToParent ?? false,
+  );
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -36,7 +51,7 @@ function RecordForm({ studentId, subjects, onSuccess }: Props) {
     e.preventDefault();
     setError('');
 
-    if (recordType === 'SPECIAL' && !subjectId) {
+    if (!isEdit && recordType === 'SPECIAL' && !subjectId) {
       setError('과목을 선택해주세요');
       return;
     }
@@ -47,202 +62,152 @@ function RecordForm({ studentId, subjects, onSuccess }: Props) {
 
     setSubmitting(true);
     try {
-      await studentService.createRecord({
-        studentId,
-        year,
-        semester,
-        recordType,
-        category: recordType === 'BASIC' ? basicCategory : 'SPECIAL_NOTE',
-        subjectId: recordType === 'SPECIAL' ? Number(subjectId) : undefined,
-        content: { text: content.trim() },
-        isVisibleToStudent,
-        isVisibleToParent,
-      });
+      if (isEdit) {
+        await studentService.updateRecord(editTarget.id, { content: { text: content.trim() } });
+      } else {
+        await studentService.createRecord({
+          studentId,
+          year,
+          semester,
+          recordType,
+          category: recordType === 'BASIC' ? basicCategory : 'SPECIAL_NOTE',
+          subjectId: recordType === 'SPECIAL' ? Number(subjectId) : undefined,
+          content: { text: content.trim() },
+          isVisibleToStudent,
+          isVisibleToParent,
+        });
+      }
       onSuccess();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
-      setError(axiosErr.response?.data?.message || '등록에 실패했습니다');
+      setError(axiosErr.response?.data?.message || (isEdit ? '수정에 실패했습니다' : '등록에 실패했습니다'));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} style={styles.form}>
-      <h3 style={styles.formTitle}>학생부 항목 등록</h3>
-      {error && <p style={styles.error}>{error}</p>}
+    <Card>
+      <CardHeader>
+        <CardTitle>{isEdit ? '학생부 항목 수정' : '학생부 항목 등록'}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <div style={styles.row}>
-        <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={styles.input}>
-          {[2024, 2025, 2026].map((y) => (
-            <option key={y} value={y}>
-              {y}년
-            </option>
-          ))}
-        </select>
+          <div className="flex gap-3">
+            <Select
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              disabled={isEdit}
+              className="flex-1"
+            >
+              {[2024, 2025, 2026].map((y) => (
+                <option key={y} value={y}>
+                  {y}년
+                </option>
+              ))}
+            </Select>
 
-        <select
-          value={semester}
-          onChange={(e) => setSemester(Number(e.target.value))}
-          style={styles.input}
-        >
-          <option value={1}>1학기</option>
-          <option value={2}>2학기</option>
-        </select>
-      </div>
+            <Select
+              value={semester}
+              onChange={(e) => setSemester(Number(e.target.value))}
+              disabled={isEdit}
+              className="flex-1"
+            >
+              <option value={1}>1학기</option>
+              <option value={2}>2학기</option>
+            </Select>
+          </div>
 
-      <div style={styles.typeRow}>
-        <span style={styles.typeLabel}>구분</span>
-        <label style={styles.radioLabel}>
-          <input
-            type="radio"
-            value="BASIC"
-            checked={recordType === 'BASIC'}
-            onChange={() => setRecordType('BASIC')}
-            disabled={!isHomeroom}
+          <div className="flex items-center gap-5">
+            <Label className="font-bold">구분</Label>
+            <label className="flex cursor-pointer items-center gap-1.5 text-sm">
+              <input
+                type="radio"
+                value="BASIC"
+                checked={recordType === 'BASIC'}
+                onChange={() => setRecordType('BASIC')}
+                disabled={isEdit}
+              />
+              담임 항목
+            </label>
+            <label className="flex cursor-pointer items-center gap-1.5 text-sm">
+              <input
+                type="radio"
+                value="SPECIAL"
+                checked={recordType === 'SPECIAL'}
+                onChange={() => setRecordType('SPECIAL')}
+                disabled={isEdit}
+              />
+              교과 특기사항
+            </label>
+          </div>
+
+          {recordType === 'BASIC' && (
+            <Select
+              value={basicCategory}
+              onChange={(e) => setBasicCategory(e.target.value as BasicCategory)}
+              disabled={isEdit}
+            >
+              {basicCategories.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </Select>
+          )}
+
+          {recordType === 'SPECIAL' && (
+            <Select
+              value={subjectId}
+              onChange={(e) => setSubjectId(Number(e.target.value) || '')}
+              disabled={isEdit}
+            >
+              <option value="">과목 선택</option>
+              {subjects.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </Select>
+          )}
+
+          <Textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={5}
+            placeholder="내용을 입력하세요"
           />
-          담임 항목
-          {!isHomeroom && <span style={styles.disabledNote}> (담임만 입력 가능)</span>}
-        </label>
-        <label style={styles.radioLabel}>
-          <input
-            type="radio"
-            value="SPECIAL"
-            checked={recordType === 'SPECIAL'}
-            onChange={() => setRecordType('SPECIAL')}
-          />
-          교과 특기사항
-        </label>
-      </div>
 
-      {recordType === 'BASIC' && (
-        <select
-          value={basicCategory}
-          onChange={(e) => setBasicCategory(e.target.value as BasicCategory)}
-          style={{ ...styles.input, marginBottom: '12px' }}
-        >
-          {basicCategories.map((c) => (
-            <option key={c.value} value={c.value}>
-              {c.label}
-            </option>
-          ))}
-        </select>
-      )}
+          <div className="flex gap-5">
+            <label className="flex cursor-pointer items-center gap-1.5 text-sm">
+              <input
+                type="checkbox"
+                checked={isVisibleToStudent}
+                onChange={(e) => setIsVisibleToStudent(e.target.checked)}
+                disabled={isEdit}
+              />
+              학생에게 공개
+            </label>
+            <label className="flex cursor-pointer items-center gap-1.5 text-sm">
+              <input
+                type="checkbox"
+                checked={isVisibleToParent}
+                onChange={(e) => setIsVisibleToParent(e.target.checked)}
+                disabled={isEdit}
+              />
+              학부모에게 공개
+            </label>
+          </div>
 
-      {recordType === 'SPECIAL' && (
-        <select
-          value={subjectId}
-          onChange={(e) => setSubjectId(Number(e.target.value) || '')}
-          style={{ ...styles.input, marginBottom: '12px' }}
-        >
-          <option value="">과목 선택</option>
-          {subjects.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      )}
-
-      <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        rows={5}
-        style={styles.textarea}
-        placeholder="내용을 입력하세요"
-      />
-
-      <div style={styles.checkboxRow}>
-        <label style={styles.checkboxLabel}>
-          <input
-            type="checkbox"
-            checked={isVisibleToStudent}
-            onChange={(e) => setIsVisibleToStudent(e.target.checked)}
-          />
-          학생에게 공개
-        </label>
-        <label style={styles.checkboxLabel}>
-          <input
-            type="checkbox"
-            checked={isVisibleToParent}
-            onChange={(e) => setIsVisibleToParent(e.target.checked)}
-          />
-          학부모에게 공개
-        </label>
-      </div>
-
-      <button type="submit" disabled={submitting} style={styles.submitButton}>
-        {submitting ? '등록 중...' : '등록'}
-      </button>
-    </form>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? (isEdit ? '수정 중...' : '등록 중...') : isEdit ? '수정' : '등록'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  form: {
-    backgroundColor: '#fff',
-    padding: '20px',
-    borderRadius: '8px',
-    border: '1px solid #e5e5e5',
-    marginBottom: '20px',
-  },
-  formTitle: { margin: '0 0 16px' },
-  row: { display: 'flex', gap: '12px', marginBottom: '12px' },
-  typeRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '20px',
-    marginBottom: '12px',
-  },
-  typeLabel: { fontSize: '14px', color: '#333', fontWeight: 'bold' },
-  radioLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '14px',
-    color: '#333',
-    cursor: 'pointer',
-  },
-  disabledNote: { fontSize: '11px', color: '#999' },
-  input: {
-    flex: 1,
-    padding: '8px 12px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '14px',
-  },
-  textarea: {
-    width: '100%',
-    padding: '12px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '14px',
-    marginBottom: '12px',
-    boxSizing: 'border-box',
-  },
-  checkboxRow: {
-    display: 'flex',
-    gap: '20px',
-    marginBottom: '16px',
-  },
-  checkboxLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '14px',
-    color: '#333',
-    cursor: 'pointer',
-  },
-  submitButton: {
-    padding: '10px 24px',
-    backgroundColor: '#4a90d9',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  error: { color: '#ff4d4f', fontSize: '13px', marginBottom: '12px' },
-};
 
 export default RecordForm;

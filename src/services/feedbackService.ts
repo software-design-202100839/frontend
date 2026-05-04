@@ -19,6 +19,8 @@ export interface FeedbackResponse {
 
 export interface FeedbackRequest {
   studentId: number;
+  year: number;
+  semester: number;
   category: FeedbackCategory;
   content: string;
   isVisibleToStudent: boolean;
@@ -81,6 +83,20 @@ const feedbackService = {
 
   async deleteFeedback(feedbackId: number): Promise<void> {
     await api.delete(`/feedbacks/${feedbackId}`);
+  },
+
+  async getVisibleFeedbacksForStudent(studentId: number): Promise<FeedbackResponse[]> {
+    const { data } = await api.get<ApiResponse<FeedbackResponse[]>>(
+      `/feedbacks/students/${studentId}/visible`,
+    );
+    return data.data;
+  },
+
+  async getVisibleFeedbacksForParent(studentId: number): Promise<FeedbackResponse[]> {
+    const { data } = await api.get<ApiResponse<FeedbackResponse[]>>(
+      `/feedbacks/students/${studentId}/parent`,
+    );
+    return data.data;
   },
 };
 

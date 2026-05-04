@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Trash2, Users, UserPlus, School, BookOpen, GraduationCap } from 'lucide-react';
 import adminService, {
   type TeacherSummary,
   type StudentSummary,
@@ -7,6 +8,22 @@ import adminService, {
   type AssignmentSummary,
 } from '../../services/adminService';
 import gradeService, { type Subject } from '../../services/gradeService';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 type Tab = 'teachers' | 'students' | 'parents' | 'classes' | 'assignments';
 
@@ -22,24 +39,27 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('teachers');
 
   return (
-    <div>
-      <h2 style={s.pageTitle}>관리자</h2>
-      <div style={s.tabs}>
-        {(Object.keys(TAB_LABEL) as Tab[]).map(t => (
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold">관리자</h2>
+      <div className="flex gap-1 border-b-2 border-border">
+        {(Object.keys(TAB_LABEL) as Tab[]).map((t) => (
           <button
             key={t}
-            style={{ ...s.tab, ...(tab === t ? s.tabActive : {}) }}
+            className={cn(
+              'cursor-pointer border-b-2 border-transparent px-5 py-2 text-sm text-muted-foreground -mb-[2px] bg-transparent',
+              tab === t && 'border-primary font-semibold text-primary',
+            )}
             onClick={() => setTab(t)}
           >
             {TAB_LABEL[t]}
           </button>
         ))}
       </div>
-      <div style={s.content}>
-        {tab === 'teachers'    && <TeachersTab />}
-        {tab === 'students'    && <StudentsTab />}
-        {tab === 'parents'     && <ParentsTab />}
-        {tab === 'classes'     && <ClassesTab />}
+      <div>
+        {tab === 'teachers' && <TeachersTab />}
+        {tab === 'students' && <StudentsTab />}
+        {tab === 'parents' && <ParentsTab />}
+        {tab === 'classes' && <ClassesTab />}
         {tab === 'assignments' && <AssignmentsTab />}
       </div>
     </div>
@@ -72,35 +92,49 @@ function TeachersTab() {
   }
 
   return (
-    <div style={s.twoCol}>
-      <div>
-        <h3 style={s.sectionTitle}>교사 등록</h3>
-        <form onSubmit={handleSubmit}>
-          <Field label="이름" value={name} onChange={setName} required />
-          <Field label="전화번호" value={phone} onChange={setPhone} placeholder="010-1234-5678" required />
-          <Field label="담당교과" value={dept} onChange={setDept} placeholder="수학 (선택)" />
-          {error && <p style={s.error}>{error}</p>}
-          <button style={s.btn} disabled={loading}>{loading ? '처리 중...' : '등록'}</button>
-        </form>
-      </div>
-      <div>
-        <h3 style={s.sectionTitle}>교사 목록 ({teachers.length}명)</h3>
-        <table style={s.table}>
-          <thead><tr>
-            <Th>이름</Th><Th>전화번호</Th><Th>담당교과</Th><Th>활성화</Th>
-          </tr></thead>
-          <tbody>
-            {teachers.map(t => (
-              <tr key={t.id}>
-                <Td>{t.name}</Td>
-                <Td>{t.phone}</Td>
-                <Td>{t.department ?? '-'}</Td>
-                <Td><Badge active={t.activated} /></Td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><UserPlus className="h-4 w-4" /> 교사 등록</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <FormField label="이름" value={name} onChange={setName} required />
+            <FormField label="전화번호" value={phone} onChange={setPhone} placeholder="010-1234-5678" required />
+            <FormField label="담당교과" value={dept} onChange={setDept} placeholder="수학 (선택)" />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button type="submit" disabled={loading}>{loading ? '처리 중...' : '등록'}</Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Users className="h-4 w-4" /> 교사 목록 ({teachers.length}명)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>이름</TableHead>
+                <TableHead>전화번호</TableHead>
+                <TableHead>담당교과</TableHead>
+                <TableHead>활성화</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {teachers.map((t) => (
+                <TableRow key={t.id}>
+                  <TableCell>{t.name}</TableCell>
+                  <TableCell>{t.phone}</TableCell>
+                  <TableCell>{t.department ?? '-'}</TableCell>
+                  <TableCell><StatusBadge active={t.activated} /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -158,61 +192,90 @@ function StudentsTab() {
   }
 
   return (
-    <div>
-      <div style={s.twoCol}>
-        <div>
-          <h3 style={s.sectionTitle}>학생 등록</h3>
-          <form onSubmit={handleRegister}>
-            <Field label="이름" value={name} onChange={setName} required />
-            <Field label="전화번호" value={phone} onChange={setPhone} placeholder="010-1234-5678" required />
-            <Field label="입학년도" value={admYear} onChange={setAdmYear} placeholder="2026" required />
-            {error && <p style={s.error}>{error}</p>}
-            <button style={s.btn} disabled={loading}>{loading ? '처리 중...' : '등록'}</button>
-          </form>
-        </div>
-        <div>
-          <h3 style={s.sectionTitle}>반 배정</h3>
-          <form onSubmit={handleEnroll}>
-            <label style={s.label}>학생 선택</label>
-            <select style={s.select} value={enrollStudentId} onChange={e => setEnrollStudentId(e.target.value)} required>
-              <option value="">-- 학생 선택 --</option>
-              {students.filter(st => !st.currentEnrollment).map(st => (
-                <option key={st.id} value={st.id}>{st.name} ({st.admissionYear}년 입학)</option>
-              ))}
-            </select>
-            <label style={s.label}>반 선택</label>
-            <select style={s.select} value={enrollClassId} onChange={e => setEnrollClassId(e.target.value)} required>
-              <option value="">-- 반 선택 --</option>
-              {classes.map(c => (
-                <option key={c.id} value={c.id}>{c.grade}학년 {c.classNum}반</option>
-              ))}
-            </select>
-            <Field label="학번" value={enrollStudentNum} onChange={setEnrollStudentNum} placeholder="1" required />
-            {enrollError && <p style={s.error}>{enrollError}</p>}
-            <button style={s.btn} disabled={enrollLoading}>{enrollLoading ? '처리 중...' : '배정'}</button>
-          </form>
-        </div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><UserPlus className="h-4 w-4" /> 학생 등록</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleRegister} className="space-y-4">
+              <FormField label="이름" value={name} onChange={setName} required />
+              <FormField label="전화번호" value={phone} onChange={setPhone} placeholder="010-1234-5678" required />
+              <FormField label="입학년도" value={admYear} onChange={setAdmYear} placeholder="2026" required />
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button type="submit" disabled={loading}>{loading ? '처리 중...' : '등록'}</Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><School className="h-4 w-4" /> 반 배정</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleEnroll} className="space-y-4">
+              <div>
+                <Label className="mb-1.5 block">학생 선택</Label>
+                <Select value={enrollStudentId} onChange={e => setEnrollStudentId(e.target.value)} required>
+                  <option value="">-- 학생 선택 --</option>
+                  {students.filter(st => !st.currentEnrollment).map(st => (
+                    <option key={st.id} value={st.id}>{st.name} ({st.admissionYear}년 입학)</option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label className="mb-1.5 block">반 선택</Label>
+                <Select value={enrollClassId} onChange={e => setEnrollClassId(e.target.value)} required>
+                  <option value="">-- 반 선택 --</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>{c.grade}학년 {c.classNum}반</option>
+                  ))}
+                </Select>
+              </div>
+              <FormField label="학번" value={enrollStudentNum} onChange={setEnrollStudentNum} placeholder="1" required />
+              {enrollError && <p className="text-sm text-destructive">{enrollError}</p>}
+              <Button type="submit" disabled={enrollLoading}>{enrollLoading ? '처리 중...' : '배정'}</Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
-      <h3 style={{ ...s.sectionTitle, marginTop: 24 }}>학생 목록 ({students.length}명)</h3>
-      <table style={s.table}>
-        <thead><tr>
-          <Th>ID</Th><Th>이름</Th><Th>전화번호</Th><Th>입학년도</Th><Th>소속 반</Th><Th>활성화</Th>
-        </tr></thead>
-        <tbody>
-          {students.map(st => (
-            <tr key={st.id}>
-              <Td>{st.id}</Td>
-              <Td>{st.name}</Td>
-              <Td>{st.phone}</Td>
-              <Td>{st.admissionYear}</Td>
-              <Td>{st.currentEnrollment
-                ? `${st.currentEnrollment.grade}학년 ${st.currentEnrollment.classNum}반 ${st.currentEnrollment.studentNum}번`
-                : '미배정'}</Td>
-              <Td><Badge active={st.activated} /></Td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>학생 목록 ({students.length}명)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>이름</TableHead>
+                <TableHead>전화번호</TableHead>
+                <TableHead>입학년도</TableHead>
+                <TableHead>소속 반</TableHead>
+                <TableHead>활성화</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {students.map((st) => (
+                <TableRow key={st.id}>
+                  <TableCell>{st.id}</TableCell>
+                  <TableCell>{st.name}</TableCell>
+                  <TableCell>{st.phone}</TableCell>
+                  <TableCell>{st.admissionYear}</TableCell>
+                  <TableCell>
+                    {st.currentEnrollment
+                      ? `${st.currentEnrollment.grade}학년 ${st.currentEnrollment.classNum}반 ${st.currentEnrollment.studentNum}번`
+                      : '미배정'}
+                  </TableCell>
+                  <TableCell><StatusBadge active={st.activated} /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -268,57 +331,84 @@ function ParentsTab() {
   }
 
   return (
-    <div>
-      <div style={s.twoCol}>
-        <div>
-          <h3 style={s.sectionTitle}>학부모 등록</h3>
-          <form onSubmit={handleRegister}>
-            <Field label="이름" value={name} onChange={setName} required />
-            <Field label="전화번호" value={phone} onChange={setPhone} placeholder="010-1234-5678" required />
-            {error && <p style={s.error}>{error}</p>}
-            <button style={s.btn} disabled={loading}>{loading ? '처리 중...' : '등록'}</button>
-          </form>
-        </div>
-        <div>
-          <h3 style={s.sectionTitle}>자녀 연결</h3>
-          <form onSubmit={handleLink}>
-            <label style={s.label}>학부모 선택</label>
-            <select style={s.select} value={linkParentId} onChange={e => setLinkParentId(e.target.value)} required>
-              <option value="">-- 학부모 선택 --</option>
-              {parents.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-            <label style={s.label}>학생 선택</label>
-            <select style={s.select} value={linkStudentId} onChange={e => setLinkStudentId(e.target.value)} required>
-              <option value="">-- 학생 선택 --</option>
-              {students.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}
-            </select>
-            <label style={s.label}>관계</label>
-            <select style={s.select} value={relationship} onChange={e => setRelationship(e.target.value as typeof relationship)}>
-              <option value="FATHER">부</option>
-              <option value="MOTHER">모</option>
-              <option value="GUARDIAN">보호자</option>
-            </select>
-            {linkError && <p style={s.error}>{linkError}</p>}
-            <button style={s.btn} disabled={linkLoading}>{linkLoading ? '처리 중...' : '연결'}</button>
-          </form>
-        </div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><UserPlus className="h-4 w-4" /> 학부모 등록</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleRegister} className="space-y-4">
+              <FormField label="이름" value={name} onChange={setName} required />
+              <FormField label="전화번호" value={phone} onChange={setPhone} placeholder="010-1234-5678" required />
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button type="submit" disabled={loading}>{loading ? '처리 중...' : '등록'}</Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Users className="h-4 w-4" /> 자녀 연결</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLink} className="space-y-4">
+              <div>
+                <Label className="mb-1.5 block">학부모 선택</Label>
+                <Select value={linkParentId} onChange={e => setLinkParentId(e.target.value)} required>
+                  <option value="">-- 학부모 선택 --</option>
+                  {parents.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </Select>
+              </div>
+              <div>
+                <Label className="mb-1.5 block">학생 선택</Label>
+                <Select value={linkStudentId} onChange={e => setLinkStudentId(e.target.value)} required>
+                  <option value="">-- 학생 선택 --</option>
+                  {students.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}
+                </Select>
+              </div>
+              <div>
+                <Label className="mb-1.5 block">관계</Label>
+                <Select value={relationship} onChange={e => setRelationship(e.target.value as typeof relationship)}>
+                  <option value="FATHER">부</option>
+                  <option value="MOTHER">모</option>
+                  <option value="GUARDIAN">보호자</option>
+                </Select>
+              </div>
+              {linkError && <p className="text-sm text-destructive">{linkError}</p>}
+              <Button type="submit" disabled={linkLoading}>{linkLoading ? '처리 중...' : '연결'}</Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
-      <h3 style={{ ...s.sectionTitle, marginTop: 24 }}>학부모 목록 ({parents.length}명)</h3>
-      <table style={s.table}>
-        <thead><tr>
-          <Th>이름</Th><Th>전화번호</Th><Th>자녀</Th><Th>활성화</Th>
-        </tr></thead>
-        <tbody>
-          {parents.map(p => (
-            <tr key={p.id}>
-              <Td>{p.name}</Td>
-              <Td>{p.phone}</Td>
-              <Td>{p.children.map(c => `${c.studentName}(${c.relationship})`).join(', ') || '-'}</Td>
-              <Td><Badge active={p.activated} /></Td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>학부모 목록 ({parents.length}명)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>이름</TableHead>
+                <TableHead>전화번호</TableHead>
+                <TableHead>자녀</TableHead>
+                <TableHead>활성화</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {parents.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell>{p.name}</TableCell>
+                  <TableCell>{p.phone}</TableCell>
+                  <TableCell>{p.children.map(c => `${c.studentName}(${c.relationship})`).join(', ') || '-'}</TableCell>
+                  <TableCell><StatusBadge active={p.activated} /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -370,60 +460,87 @@ function ClassesTab() {
   }
 
   return (
-    <div>
-      <div style={s.twoCol}>
-        <div>
-          <h3 style={s.sectionTitle}>반 생성 ({year}학년도)</h3>
-          <form onSubmit={handleCreateClass}>
-            <label style={s.label}>학년</label>
-            <select style={s.select} value={grade} onChange={e => setGrade(e.target.value)}>
-              <option value="1">1학년</option>
-              <option value="2">2학년</option>
-              <option value="3">3학년</option>
-            </select>
-            <Field label="반 번호" value={classNum} onChange={setClassNum} placeholder="1" required />
-            {error && <p style={s.error}>{error}</p>}
-            <button style={s.btn} disabled={loading}>{loading ? '처리 중...' : '생성'}</button>
-          </form>
-        </div>
-        <div>
-          <h3 style={s.sectionTitle}>담임 배정</h3>
-          <form onSubmit={handleAssignHomeroom}>
-            <label style={s.label}>반 선택</label>
-            <select style={s.select} value={homeroomClassId} onChange={e => setHomeroomClassId(e.target.value)} required>
-              <option value="">-- 반 선택 --</option>
-              {classes.map(c => (
-                <option key={c.id} value={c.id}>{c.grade}학년 {c.classNum}반</option>
-              ))}
-            </select>
-            <label style={s.label}>교사 선택</label>
-            <select style={s.select} value={homeroomTeacherId} onChange={e => setHomeroomTeacherId(e.target.value)} required>
-              <option value="">-- 교사 선택 --</option>
-              {teachers.map(t => (
-                <option key={t.id} value={t.id}>{t.name}{t.department ? ` (${t.department})` : ''}</option>
-              ))}
-            </select>
-            {homeroomError && <p style={s.error}>{homeroomError}</p>}
-            <button style={s.btn}>배정</button>
-          </form>
-        </div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><School className="h-4 w-4" /> 반 생성 ({year}학년도)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleCreateClass} className="space-y-4">
+              <div>
+                <Label className="mb-1.5 block">학년</Label>
+                <Select value={grade} onChange={e => setGrade(e.target.value)}>
+                  <option value="1">1학년</option>
+                  <option value="2">2학년</option>
+                  <option value="3">3학년</option>
+                </Select>
+              </div>
+              <FormField label="반 번호" value={classNum} onChange={setClassNum} placeholder="1" required />
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button type="submit" disabled={loading}>{loading ? '처리 중...' : '생성'}</Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><GraduationCap className="h-4 w-4" /> 담임 배정</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAssignHomeroom} className="space-y-4">
+              <div>
+                <Label className="mb-1.5 block">반 선택</Label>
+                <Select value={homeroomClassId} onChange={e => setHomeroomClassId(e.target.value)} required>
+                  <option value="">-- 반 선택 --</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>{c.grade}학년 {c.classNum}반</option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label className="mb-1.5 block">교사 선택</Label>
+                <Select value={homeroomTeacherId} onChange={e => setHomeroomTeacherId(e.target.value)} required>
+                  <option value="">-- 교사 선택 --</option>
+                  {teachers.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}{t.department ? ` (${t.department})` : ''}</option>
+                  ))}
+                </Select>
+              </div>
+              {homeroomError && <p className="text-sm text-destructive">{homeroomError}</p>}
+              <Button type="submit">배정</Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
-      <h3 style={{ ...s.sectionTitle, marginTop: 24 }}>반 목록</h3>
-      <table style={s.table}>
-        <thead><tr>
-          <Th>학년</Th><Th>반</Th><Th>담임</Th><Th>학생 수</Th>
-        </tr></thead>
-        <tbody>
-          {classes.sort((a, b) => a.grade - b.grade || a.classNum - b.classNum).map(c => (
-            <tr key={c.id}>
-              <Td>{c.grade}학년</Td>
-              <Td>{c.classNum}반</Td>
-              <Td>{c.homeroomTeacher?.name ?? '미배정'}</Td>
-              <Td>{c.studentCount}명</Td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>반 목록</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>학년</TableHead>
+                <TableHead>반</TableHead>
+                <TableHead>담임</TableHead>
+                <TableHead>학생 수</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {classes.sort((a, b) => a.grade - b.grade || a.classNum - b.classNum).map(c => (
+                <TableRow key={c.id}>
+                  <TableCell>{c.grade}학년</TableCell>
+                  <TableCell>{c.classNum}반</TableCell>
+                  <TableCell>{c.homeroomTeacher?.name ?? '미배정'}</TableCell>
+                  <TableCell>{c.studentCount}명</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -480,87 +597,107 @@ function AssignmentsTab() {
   }
 
   return (
-    <div>
-      <div style={s.twoCol}>
-        <div>
-          <h3 style={s.sectionTitle}>교사 과목 배정 ({year}학년도)</h3>
-          <form onSubmit={handleCreate}>
-            <label style={s.label}>교사 선택</label>
-            <select style={s.select} value={teacherId} onChange={e => setTeacherId(e.target.value)} required>
-              <option value="">-- 교사 선택 --</option>
-              {teachers.map(t => (
-                <option key={t.id} value={t.id}>
-                  {t.name}{t.department ? ` (${t.department})` : ''}
-                </option>
-              ))}
-            </select>
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><BookOpen className="h-4 w-4" /> 교사 과목 배정 ({year}학년도)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div>
+              <Label className="mb-1.5 block">교사 선택</Label>
+              <Select value={teacherId} onChange={e => setTeacherId(e.target.value)} required>
+                <option value="">-- 교사 선택 --</option>
+                {teachers.map(t => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}{t.department ? ` (${t.department})` : ''}
+                  </option>
+                ))}
+              </Select>
+            </div>
 
-            <label style={s.label}>반 선택</label>
-            <select style={s.select} value={classId} onChange={e => setClassId(e.target.value)} required>
-              <option value="">-- 반 선택 --</option>
-              {classes.map(c => (
-                <option key={c.id} value={c.id}>{c.grade}학년 {c.classNum}반</option>
-              ))}
-            </select>
+            <div>
+              <Label className="mb-1.5 block">반 선택</Label>
+              <Select value={classId} onChange={e => setClassId(e.target.value)} required>
+                <option value="">-- 반 선택 --</option>
+                {classes.map(c => (
+                  <option key={c.id} value={c.id}>{c.grade}학년 {c.classNum}반</option>
+                ))}
+              </Select>
+            </div>
 
-            <label style={s.label}>과목 선택</label>
-            <select style={s.select} value={subjectId} onChange={e => setSubjectId(e.target.value)} required>
-              <option value="">-- 과목 선택 --</option>
-              {subjects.map(sub => (
-                <option key={sub.id} value={sub.id}>{sub.name} ({sub.code})</option>
-              ))}
-            </select>
+            <div>
+              <Label className="mb-1.5 block">과목 선택</Label>
+              <Select value={subjectId} onChange={e => setSubjectId(e.target.value)} required>
+                <option value="">-- 과목 선택 --</option>
+                {subjects.map(sub => (
+                  <option key={sub.id} value={sub.id}>{sub.name} ({sub.code})</option>
+                ))}
+              </Select>
+            </div>
 
-            {error && <p style={s.error}>{error}</p>}
-            <button style={s.btn} disabled={loading}>{loading ? '처리 중...' : '배정'}</button>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button type="submit" disabled={loading}>{loading ? '처리 중...' : '배정'}</Button>
           </form>
-        </div>
-        <div>
-          <h3 style={s.sectionTitle}>배정 현황</h3>
-          <table style={s.table}>
-            <thead><tr>
-              <Th>교사</Th><Th>반</Th><Th>과목</Th><Th>삭제</Th>
-            </tr></thead>
-            <tbody>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>배정 현황</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>교사</TableHead>
+                <TableHead>반</TableHead>
+                <TableHead>과목</TableHead>
+                <TableHead>삭제</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {assignments.length === 0 && (
-                <tr><td colSpan={4} style={{ ...s.td, color: '#999', textAlign: 'center' }}>배정 내역 없음</td></tr>
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground">배정 내역 없음</TableCell>
+                </TableRow>
               )}
               {assignments
                 .sort((a, b) => a.classInfo.grade - b.classInfo.grade || a.classInfo.classNum - b.classInfo.classNum)
                 .map(a => (
-                  <tr key={a.id}>
-                    <Td>{a.teacher.name}{a.teacher.department ? ` (${a.teacher.department})` : ''}</Td>
-                    <Td>{a.classInfo.grade}학년 {a.classInfo.classNum}반</Td>
-                    <Td>{a.subject.name}</Td>
-                    <Td>
-                      <button
+                  <TableRow key={a.id}>
+                    <TableCell>{a.teacher.name}{a.teacher.department ? ` (${a.teacher.department})` : ''}</TableCell>
+                    <TableCell>{a.classInfo.grade}학년 {a.classInfo.classNum}반</TableCell>
+                    <TableCell>{a.subject.name}</TableCell>
+                    <TableCell>
+                      <Button
                         onClick={() => handleDelete(a.id)}
-                        style={{ ...s.btn, backgroundColor: '#d32f2f', padding: '4px 10px', fontSize: 12 }}
+                        variant="destructive"
+                        size="sm"
                       >
-                        삭제
-                      </button>
-                    </Td>
-                  </tr>
+                        <Trash2 className="h-3.5 w-3.5" /> 삭제
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
 // ─── 공통 컴포넌트 ────────────────────────────────────────
 
-function Field({ label, value, onChange, placeholder, required }: {
+function FormField({ label, value, onChange, placeholder, required }: {
   label: string; value: string; onChange: (v: string) => void;
   placeholder?: string; required?: boolean;
 }) {
   return (
-    <div style={{ marginBottom: 12 }}>
-      <label style={s.label}>{label}</label>
-      <input
-        style={s.input}
+    <div>
+      <Label className="mb-1.5 block">{label}</Label>
+      <Input
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
@@ -570,51 +707,10 @@ function Field({ label, value, onChange, placeholder, required }: {
   );
 }
 
-function Th({ children }: { children: React.ReactNode }) {
-  return <th style={s.th}>{children}</th>;
-}
-
-function Td({ children }: { children: React.ReactNode }) {
-  return <td style={s.td}>{children}</td>;
-}
-
-function Badge({ active }: { active: boolean }) {
+function StatusBadge({ active }: { active: boolean }) {
   return (
-    <span style={{ ...s.badge, backgroundColor: active ? '#e8f5e9' : '#fce4ec', color: active ? '#2e7d32' : '#c62828' }}>
+    <Badge variant={active ? 'success' : 'destructive'}>
       {active ? '활성' : '미활성'}
-    </span>
+    </Badge>
   );
 }
-
-// ─── 스타일 ───────────────────────────────────────────────
-
-const s: Record<string, React.CSSProperties> = {
-  pageTitle: { margin: '0 0 16px', fontSize: 22, fontWeight: 600 },
-  tabs: { display: 'flex', gap: 4, marginBottom: 24, borderBottom: '2px solid #e5e5e5' },
-  tab: {
-    padding: '8px 20px', border: 'none', background: 'none',
-    cursor: 'pointer', fontSize: 14, color: '#666', borderBottom: '2px solid transparent', marginBottom: -2,
-  },
-  tabActive: { color: '#1976d2', borderBottom: '2px solid #1976d2', fontWeight: 600 },
-  content: {},
-  twoCol: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 },
-  sectionTitle: { margin: '0 0 16px', fontSize: 15, fontWeight: 600, color: '#333' },
-  label: { display: 'block', marginBottom: 4, fontSize: 13, fontWeight: 500, color: '#555' },
-  input: {
-    width: '100%', padding: '8px 10px', border: '1px solid #ddd',
-    borderRadius: 4, fontSize: 14, boxSizing: 'border-box',
-  },
-  select: {
-    width: '100%', padding: '8px 10px', border: '1px solid #ddd',
-    borderRadius: 4, fontSize: 14, boxSizing: 'border-box', marginBottom: 12,
-  },
-  btn: {
-    padding: '9px 20px', backgroundColor: '#1976d2', color: '#fff',
-    border: 'none', borderRadius: 4, fontSize: 14, cursor: 'pointer', marginTop: 4,
-  },
-  error: { color: '#d32f2f', fontSize: 13, margin: '4px 0' },
-  table: { width: '100%', borderCollapse: 'collapse', fontSize: 13 },
-  th: { padding: '8px 12px', backgroundColor: '#f5f5f5', borderBottom: '1px solid #e0e0e0', textAlign: 'left', fontWeight: 600 },
-  td: { padding: '8px 12px', borderBottom: '1px solid #f0f0f0' },
-  badge: { padding: '2px 8px', borderRadius: 12, fontSize: 12, fontWeight: 500 },
-};

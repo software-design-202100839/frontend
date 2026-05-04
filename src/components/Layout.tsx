@@ -1,6 +1,10 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Bell, LogOut, GraduationCap } from 'lucide-react';
 import authService from '../services/authService';
 import { useNotification } from '../hooks/useNotification';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { cn } from '@/lib/utils';
 
 function Layout() {
   const navigate = useNavigate();
@@ -20,142 +24,77 @@ function Layout() {
   };
 
   const roleLabel: Record<string, string> = {
+    ADMIN: '관리자',
     TEACHER: '교사',
     STUDENT: '학생',
     PARENT: '학부모',
   };
 
   const navItems = [
-    { path: '/', label: '대시보드' },
-    { path: '/grades', label: '성적 관리' },
-    { path: '/records', label: '학생부' },
-    { path: '/feedbacks', label: '피드백' },
-    { path: '/counselings', label: '상담내역' },
-    { path: '/notifications', label: '알림' },
+    { path: '/', label: '대시보드', roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
+    { path: '/grades', label: '성적 관리', roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
+    { path: '/records', label: '학생부', roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
+    { path: '/feedbacks', label: '피드백', roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
+    { path: '/counselings', label: '상담내역', roles: ['ADMIN', 'TEACHER'] },
+    { path: '/admin', label: '관리', roles: ['ADMIN'] },
   ];
 
+  const visibleNavItems = navItems.filter((item) => item.roles.includes(user?.role || ''));
+
   return (
-    <div style={styles.container}>
-      <header style={styles.header}>
-        <div style={styles.headerLeft}>
-          <h1 style={styles.logo}>SSCM</h1>
-          <nav style={styles.nav}>
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                style={{
-                  ...styles.navLink,
-                  ...(location.pathname === item.path ? styles.navLinkActive : {}),
-                }}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-        <div style={styles.userInfo}>
-          <Link to="/notifications" style={styles.bellLink}>
-            <span style={styles.bell}>&#128276;</span>
-            {unreadCount > 0 && <span style={styles.badge}>{unreadCount}</span>}
-          </Link>
-          <span>
-            {user?.name} ({roleLabel[user?.role || '']})
-          </span>
-          <button onClick={handleLogout} style={styles.logoutButton}>
-            로그아웃
-          </button>
+    <div className="min-h-screen bg-muted/30">
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
+          <div className="flex items-center gap-6">
+            <Link to="/" className="flex items-center gap-2 font-bold text-primary">
+              <GraduationCap className="h-5 w-5" />
+              <span className="text-lg">SSCM</span>
+            </Link>
+            <nav className="hidden md:flex items-center gap-1">
+              {visibleNavItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    'rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                    location.pathname === item.path
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link to="/notifications" className="relative">
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <Badge className="absolute -right-1 -top-1 h-5 min-w-5 items-center justify-center p-0 text-[10px]">
+                    {unreadCount}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
+            <div className="hidden sm:flex items-center gap-2 text-sm">
+              <span className="font-medium">{user?.name}</span>
+              <Badge variant="secondary">{roleLabel[user?.role || '']}</Badge>
+            </div>
+            <Button variant="ghost" size="icon" onClick={handleLogout} title="로그아웃">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </header>
-      <main style={styles.main}>
+
+      <main className="mx-auto max-w-7xl px-4 py-6">
         <Outlet />
       </main>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '12px 24px',
-    backgroundColor: '#fff',
-    borderBottom: '1px solid #e5e5e5',
-  },
-  headerLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '24px',
-  },
-  logo: {
-    margin: 0,
-    fontSize: '20px',
-    color: '#4a90d9',
-  },
-  nav: {
-    display: 'flex',
-    gap: '4px',
-  },
-  navLink: {
-    padding: '6px 12px',
-    borderRadius: '4px',
-    textDecoration: 'none',
-    color: '#666',
-    fontSize: '14px',
-  },
-  navLinkActive: {
-    backgroundColor: '#e8f0fe',
-    color: '#4a90d9',
-    fontWeight: 'bold',
-  },
-  userInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    fontSize: '14px',
-    color: '#666',
-  },
-  bellLink: {
-    position: 'relative',
-    textDecoration: 'none',
-    marginRight: '4px',
-  },
-  bell: {
-    fontSize: '20px',
-    cursor: 'pointer',
-  },
-  badge: {
-    position: 'absolute',
-    top: '-6px',
-    right: '-8px',
-    backgroundColor: '#ff4d4f',
-    color: '#fff',
-    fontSize: '10px',
-    fontWeight: 'bold',
-    borderRadius: '10px',
-    padding: '1px 5px',
-    minWidth: '16px',
-    textAlign: 'center',
-    lineHeight: '14px',
-  },
-  logoutButton: {
-    padding: '6px 12px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    backgroundColor: '#fff',
-    cursor: 'pointer',
-    fontSize: '13px',
-  },
-  main: {
-    padding: '24px',
-    maxWidth: '1200px',
-    margin: '0 auto',
-  },
-};
 
 export default Layout;

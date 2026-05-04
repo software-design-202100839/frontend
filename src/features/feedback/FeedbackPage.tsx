@@ -1,13 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import gradeService from '../../services/gradeService';
 import feedbackService from '../../services/feedbackService';
 import type { StudentInfo } from '../../services/gradeService';
 import { formatStudentLabel } from '../../types/student';
+import StudentSelector from '@/components/StudentSelector';
 
 const CURRENT_YEAR = new Date().getFullYear();
 import type { FeedbackResponse, FeedbackCategory } from '../../services/feedbackService';
 import authService from '../../services/authService';
 import FeedbackForm from './FeedbackForm';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Select } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 const categories: FeedbackCategory[] = [
   'ACADEMIC',
@@ -48,17 +54,24 @@ function FeedbackPage() {
     }
     setLoading(true);
     try {
-      const data = await feedbackService.getFeedbacksByStudent(
-        selectedStudentId,
-        categoryFilter || undefined,
-      );
+      let data: FeedbackResponse[];
+      if (user?.role === 'STUDENT') {
+        data = await feedbackService.getVisibleFeedbacksForStudent(selectedStudentId);
+      } else if (user?.role === 'PARENT') {
+        data = await feedbackService.getVisibleFeedbacksForParent(selectedStudentId);
+      } else {
+        data = await feedbackService.getFeedbacksByStudent(
+          selectedStudentId,
+          categoryFilter || undefined,
+        );
+      }
       setFeedbacks(data);
     } catch {
       setFeedbacks([]);
     } finally {
       setLoading(false);
     }
-  }, [selectedStudentId, categoryFilter]);
+  }, [selectedStudentId, categoryFilter, user?.role]);
 
   useEffect(() => {
     if (selectedStudentId) {
@@ -93,16 +106,16 @@ function FeedbackPage() {
   const selectedStudent = students.find((s) => s.id === selectedStudentId);
 
   return (
-    <div>
-      <div style={styles.toolbar}>
-        <h2 style={styles.title}>피드백 관리</h2>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">피드백 관리</h2>
         {isTeacher && (
-          <button
+          <Button
             onClick={() => (showForm ? handleCancel() : setShowForm(true))}
-            style={styles.addButton}
+            variant={showForm ? 'outline' : 'default'}
           >
-            {showForm ? '취소' : '+ 피드백 작성'}
-          </button>
+            {showForm ? '취소' : <><Plus className="h-4 w-4" /> 피드백 작성</>}
+          </Button>
         )}
       </div>
 
@@ -110,201 +123,90 @@ function FeedbackPage() {
         <FeedbackForm students={students} editTarget={editTarget} onSuccess={handleCreated} />
       )}
 
-      <div style={styles.filterRow}>
-        {isTeacher && (
-          <select
-            value={selectedStudentId ?? ''}
-            onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)}
-            style={styles.select}
-          >
-            <option value="">학생 선택</option>
-            {students.map((s) => (
-              <option key={s.id} value={s.id}>
-                {formatStudentLabel(s, CURRENT_YEAR)}
-              </option>
-            ))}
-          </select>
-        )}
-
-        {isParent && children.length > 1 && (
-          <select
-            value={selectedStudentId ?? ''}
-            onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)}
-            style={styles.select}
-          >
-            {children.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        )}
-
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value as FeedbackCategory | '')}
-          style={styles.select}
-        >
+      <div className="flex flex-wrap gap-3">
+        <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value as FeedbackCategory | '')} className="w-auto">
           <option value="">전체 카테고리</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>
-              {feedbackService.categoryLabels[c]}
-            </option>
-          ))}
-        </select>
+          {categories.map((c) => <option key={c} value={c}>{feedbackService.categoryLabels[c]}</option>)}
+        </Select>
       </div>
 
+      {isTeacher && (
+        <StudentSelector students={students} selectedStudentId={selectedStudentId} year={CURRENT_YEAR} onSelect={setSelectedStudentId} />
+      )}
+      {isParent && children.length > 1 && (
+        <Select value={selectedStudentId ?? ''} onChange={(e) => setSelectedStudentId(Number(e.target.value) || null)} className="w-40">
+          {children.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </Select>
+      )}
+
       {selectedStudent && (
-        <div style={styles.studentInfo}>
+        <div className="rounded-md bg-muted px-4 py-3 text-sm">
           <strong>{formatStudentLabel(selectedStudent, CURRENT_YEAR)}</strong>
         </div>
       )}
 
-      {loading && <p style={styles.loading}>로딩 중...</p>}
+      {loading && <p className="text-center text-muted-foreground">로딩 중...</p>}
 
       {!loading && feedbacks.length === 0 && selectedStudentId && (
-        <p style={styles.empty}>등록된 피드백이 없습니다.</p>
+        <p className="py-10 text-center text-muted-foreground">등록된 피드백이 없습니다.</p>
       )}
 
-      {feedbacks.map((fb) => (
-        <div key={fb.id} style={styles.card}>
-          <div style={styles.cardHeader}>
-            <span style={styles.badge}>{feedbackService.categoryLabels[fb.category]}</span>
-            <span style={styles.teacher}>{fb.teacherName}</span>
-            <span style={styles.date}>{new Date(fb.updatedAt).toLocaleDateString('ko-KR')}</span>
-            {isTeacher && (
-              <div style={styles.actions}>
-                <button onClick={() => handleEdit(fb)} style={styles.editButton}>
-                  수정
-                </button>
-                <button onClick={() => handleDelete(fb.id)} style={styles.deleteButton}>
-                  삭제
-                </button>
+      <div className="space-y-3">
+        {feedbacks.map((fb) => (
+          <Card key={fb.id}>
+            <CardContent className="p-4">
+              <div className="mb-2 flex items-center gap-3">
+                <Badge variant="secondary">
+                  {feedbackService.categoryLabels[fb.category]}
+                </Badge>
+                <span className="text-[13px] text-muted-foreground">{fb.teacherName}</span>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(fb.updatedAt).toLocaleDateString('ko-KR')}
+                </span>
+                {isTeacher && (
+                  <div className="ml-auto flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(fb)}>
+                      <Edit className="h-3.5 w-3.5" />
+                      수정
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(fb.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                      삭제
+                    </Button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <p style={styles.content}>{fb.content}</p>
-          <div style={styles.visibility}>
-            <span style={fb.isVisibleToStudent ? styles.visibleTag : styles.hiddenTag}>
-              학생 {fb.isVisibleToStudent ? '공개' : '비공개'}
-            </span>
-            <span style={fb.isVisibleToParent ? styles.visibleTag : styles.hiddenTag}>
-              학부모 {fb.isVisibleToParent ? '공개' : '비공개'}
-            </span>
-          </div>
-        </div>
-      ))}
+              <p className="mb-2 text-sm leading-relaxed text-foreground">{fb.content}</p>
+              <div className="flex gap-2">
+                <Badge
+                  variant={fb.isVisibleToStudent ? 'success' : 'outline'}
+                  className="text-[11px]"
+                >
+                  {fb.isVisibleToStudent ? (
+                    <Eye className="mr-1 h-3 w-3" />
+                  ) : (
+                    <EyeOff className="mr-1 h-3 w-3" />
+                  )}
+                  학생 {fb.isVisibleToStudent ? '공개' : '비공개'}
+                </Badge>
+                <Badge
+                  variant={fb.isVisibleToParent ? 'success' : 'outline'}
+                  className="text-[11px]"
+                >
+                  {fb.isVisibleToParent ? (
+                    <Eye className="mr-1 h-3 w-3" />
+                  ) : (
+                    <EyeOff className="mr-1 h-3 w-3" />
+                  )}
+                  학부모 {fb.isVisibleToParent ? '공개' : '비공개'}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  toolbar: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px',
-  },
-  title: { margin: 0 },
-  addButton: {
-    padding: '8px 16px',
-    backgroundColor: '#4a90d9',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-  },
-  filterRow: {
-    display: 'flex',
-    gap: '12px',
-    marginBottom: '16px',
-    flexWrap: 'wrap' as const,
-  },
-  select: {
-    padding: '8px 12px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '14px',
-  },
-  studentInfo: {
-    padding: '12px 16px',
-    backgroundColor: '#f8f9fa',
-    borderRadius: '4px',
-    marginBottom: '16px',
-    fontSize: '14px',
-  },
-  loading: { color: '#999', textAlign: 'center' },
-  empty: { textAlign: 'center', color: '#999', padding: '40px' },
-  card: {
-    backgroundColor: '#fff',
-    padding: '16px',
-    borderRadius: '8px',
-    border: '1px solid #e5e5e5',
-    marginBottom: '12px',
-  },
-  cardHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginBottom: '8px',
-  },
-  badge: {
-    padding: '2px 8px',
-    backgroundColor: '#e8f0fe',
-    color: '#4a90d9',
-    borderRadius: '4px',
-    fontSize: '12px',
-    fontWeight: 'bold',
-  },
-  teacher: { fontSize: '13px', color: '#666' },
-  date: { fontSize: '12px', color: '#999' },
-  actions: {
-    marginLeft: 'auto',
-    display: 'flex',
-    gap: '8px',
-  },
-  editButton: {
-    padding: '4px 8px',
-    backgroundColor: '#fff',
-    color: '#4a90d9',
-    border: '1px solid #4a90d9',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px',
-  },
-  deleteButton: {
-    padding: '4px 8px',
-    backgroundColor: '#ff4d4f',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px',
-  },
-  content: {
-    margin: '0 0 8px',
-    fontSize: '14px',
-    lineHeight: '1.6',
-    color: '#333',
-  },
-  visibility: {
-    display: 'flex',
-    gap: '8px',
-  },
-  visibleTag: {
-    padding: '2px 8px',
-    backgroundColor: '#e6f7e6',
-    color: '#52c41a',
-    borderRadius: '4px',
-    fontSize: '11px',
-  },
-  hiddenTag: {
-    padding: '2px 8px',
-    backgroundColor: '#f5f5f5',
-    color: '#999',
-    borderRadius: '4px',
-    fontSize: '11px',
-  },
-};
 
 export default FeedbackPage;

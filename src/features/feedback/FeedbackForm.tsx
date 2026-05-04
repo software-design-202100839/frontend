@@ -3,6 +3,10 @@ import feedbackService from '../../services/feedbackService';
 import type { FeedbackCategory, FeedbackResponse } from '../../services/feedbackService';
 import type { StudentInfo } from '../../services/gradeService';
 import { formatStudentLabel } from '../../types/student';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -22,6 +26,8 @@ const categories: { value: FeedbackCategory; label: string }[] = [
 
 function FeedbackForm({ students, editTarget, onSuccess }: Props) {
   const [studentId, setStudentId] = useState<number | ''>(editTarget?.studentId ?? '');
+  const [year, setYear] = useState(CURRENT_YEAR);
+  const [semester, setSemester] = useState(1);
   const [category, setCategory] = useState<FeedbackCategory>(editTarget?.category ?? 'GENERAL');
   const [content, setContent] = useState(editTarget?.content ?? '');
   const [isVisibleToStudent, setIsVisibleToStudent] = useState(
@@ -61,6 +67,8 @@ function FeedbackForm({ students, editTarget, onSuccess }: Props) {
       } else {
         await feedbackService.createFeedback({
           studentId: Number(studentId),
+          year,
+          semester,
           category,
           content,
           isVisibleToStudent,
@@ -77,122 +85,68 @@ function FeedbackForm({ students, editTarget, onSuccess }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={styles.form}>
-      <h3 style={styles.formTitle}>{isEdit ? '피드백 수정' : '피드백 작성'}</h3>
-      {error && <p style={styles.error}>{error}</p>}
+    <Card>
+      <CardHeader>
+        <CardTitle>{isEdit ? '피드백 수정' : '피드백 작성'}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <div style={styles.row}>
-        {!isEdit && (
-          <select
-            value={studentId}
-            onChange={(e) => setStudentId(Number(e.target.value) || '')}
-            style={styles.input}
-          >
-            <option value="">학생 선택</option>
-            {students.map((s) => (
-              <option key={s.id} value={s.id}>
-                {formatStudentLabel(s, CURRENT_YEAR)}
-              </option>
-            ))}
-          </select>
-        )}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {!isEdit && (
+              <Select value={studentId} onChange={(e) => setStudentId(Number(e.target.value) || '')}>
+                <option value="">학생 선택</option>
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>{formatStudentLabel(s, CURRENT_YEAR)}</option>
+                ))}
+              </Select>
+            )}
+            <Select value={year.toString()} onChange={(e) => setYear(Number(e.target.value))}>
+              {[2024, 2025, 2026].map((y) => <option key={y} value={y}>{y}년</option>)}
+            </Select>
+            <Select value={semester.toString()} onChange={(e) => setSemester(Number(e.target.value))}>
+              <option value={1}>1학기</option>
+              <option value={2}>2학기</option>
+            </Select>
+            <Select value={category} onChange={(e) => setCategory(e.target.value as FeedbackCategory)}>
+              {categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </Select>
+          </div>
 
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value as FeedbackCategory)}
-          style={styles.input}
-        >
-          {categories.map((c) => (
-            <option key={c.value} value={c.value}>
-              {c.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        rows={4}
-        style={styles.textarea}
-        placeholder="피드백 내용을 입력하세요"
-      />
-
-      <div style={styles.checkboxRow}>
-        <label style={styles.checkboxLabel}>
-          <input
-            type="checkbox"
-            checked={isVisibleToStudent}
-            onChange={(e) => setIsVisibleToStudent(e.target.checked)}
+          <Textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            rows={4}
+            placeholder="피드백 내용을 입력하세요"
           />
-          학생에게 공개
-        </label>
-        <label style={styles.checkboxLabel}>
-          <input
-            type="checkbox"
-            checked={isVisibleToParent}
-            onChange={(e) => setIsVisibleToParent(e.target.checked)}
-          />
-          학부모에게 공개
-        </label>
-      </div>
 
-      <button type="submit" disabled={submitting} style={styles.submitButton}>
-        {submitting ? '저장 중...' : isEdit ? '수정' : '등록'}
-      </button>
-    </form>
+          <div className="flex gap-5">
+            <label className="flex cursor-pointer items-center gap-1.5 text-sm">
+              <input
+                type="checkbox"
+                checked={isVisibleToStudent}
+                onChange={(e) => setIsVisibleToStudent(e.target.checked)}
+              />
+              학생에게 공개
+            </label>
+            <label className="flex cursor-pointer items-center gap-1.5 text-sm">
+              <input
+                type="checkbox"
+                checked={isVisibleToParent}
+                onChange={(e) => setIsVisibleToParent(e.target.checked)}
+              />
+              학부모에게 공개
+            </label>
+          </div>
+
+          <Button type="submit" disabled={submitting}>
+            {submitting ? '저장 중...' : isEdit ? '수정' : '등록'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  form: {
-    backgroundColor: '#fff',
-    padding: '20px',
-    borderRadius: '8px',
-    border: '1px solid #e5e5e5',
-    marginBottom: '20px',
-  },
-  formTitle: { margin: '0 0 16px' },
-  row: { display: 'flex', gap: '12px', marginBottom: '12px' },
-  input: {
-    flex: 1,
-    padding: '8px 12px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '14px',
-  },
-  textarea: {
-    width: '100%',
-    padding: '12px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    fontSize: '14px',
-    marginBottom: '12px',
-    boxSizing: 'border-box',
-  },
-  checkboxRow: {
-    display: 'flex',
-    gap: '20px',
-    marginBottom: '16px',
-  },
-  checkboxLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '14px',
-    color: '#333',
-    cursor: 'pointer',
-  },
-  submitButton: {
-    padding: '10px 24px',
-    backgroundColor: '#4a90d9',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
-  error: { color: '#ff4d4f', fontSize: '13px', marginBottom: '12px' },
-};
 
 export default FeedbackForm;

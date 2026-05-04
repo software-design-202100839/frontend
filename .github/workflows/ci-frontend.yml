@@ -1,0 +1,45 @@
+name: ci-frontend
+
+on:
+    push:
+      branches: [develop, main]
+      paths:
+        - 'src/**'          # 프론트엔드 레포가 별도면 paths 불필요
+        - 'package.json'
+    pull_request:
+      branches: [develop, main]
+
+jobs:
+    lint-and-build:
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+
+        - name: Setup Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: '20'
+            cache: 'npm'
+
+        # 1단계: 의존성 설치
+        - name: Install dependencies
+          run: npm ci
+
+        # 2단계: TypeScript 타입 체크
+        - name: Type check
+          run: npx tsc -b --noEmit
+
+        # 3단계: ESLint
+        - name: Lint
+          run: npm run lint
+
+        # 4단계: 빌드 확인
+        - name: Build
+          run: npm run build
+
+        # npm 의존성 취약점 스캔
+        - name: Security audit
+          run: npm audit --audit-level=high
+          continue-on-error: true

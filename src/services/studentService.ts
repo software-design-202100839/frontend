@@ -35,6 +35,18 @@ export interface StudentRecordRequest {
   isVisibleToParent: boolean;
 }
 
+export interface StudentRecordUpdateRequest {
+  content: Record<string, unknown>;
+}
+
+export interface StudentInfoResponse {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  admissionYear: number;
+}
+
 const basicCategoryLabels: Record<BasicCategory, string> = {
   ATTENDANCE: '출결',
   GENERAL_OPINION: '종합의견',
@@ -62,6 +74,11 @@ const studentService = {
   specialCategoryLabels,
   recordTypeLabels,
 
+  async getStudentInfo(studentId: number): Promise<StudentInfoResponse> {
+    const { data } = await api.get<ApiResponse<StudentInfoResponse>>(`/students/${studentId}`);
+    return data.data;
+  },
+
   async getStudentRecords(
     studentId: number,
     year: number,
@@ -85,6 +102,19 @@ const studentService = {
 
   async deleteRecord(recordId: number): Promise<void> {
     await api.delete(`/students/records/${recordId}`);
+  },
+
+  async getRecord(recordId: number): Promise<StudentRecord> {
+    const { data } = await api.get<ApiResponse<StudentRecord>>(`/students/records/${recordId}`);
+    return data.data;
+  },
+
+  async updateRecord(recordId: number, request: StudentRecordUpdateRequest): Promise<StudentRecord> {
+    const { data } = await api.put<ApiResponse<StudentRecord>>(
+      `/students/records/${recordId}`,
+      request,
+    );
+    return data.data;
   },
 };
 

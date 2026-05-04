@@ -1,75 +1,49 @@
 import { Link } from 'react-router-dom';
+import { BookOpen, MessageSquare, Bell } from 'lucide-react';
 import authService from '../../services/authService';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 function StudentDashboardPage() {
   const user = authService.getStoredUser();
   const enrollment = user?.roleDetail?.currentEnrollment;
 
+  const cards = [
+    { path: '/grades', icon: BookOpen, title: '내 성적', desc: '과목별 성적 및 등급 조회', color: 'text-blue-600' },
+    { path: '/feedbacks', icon: MessageSquare, title: '내 피드백', desc: '선생님이 남긴 피드백 확인', color: 'text-violet-600' },
+    { path: '/notifications', icon: Bell, title: '알림', desc: '성적 및 피드백 알림 확인', color: 'text-amber-600' },
+  ];
+
   return (
-    <div>
-      <h2>내 대시보드</h2>
-      <p>환영합니다, {user?.name}님.</p>
-
-      {enrollment && (
-        <div style={styles.enrollmentBadge}>
-          {enrollment.grade}학년 {enrollment.classNum}반 {enrollment.studentNum}번
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">내 대시보드</h2>
+          <p className="text-muted-foreground">환영합니다, {user?.name}님.</p>
         </div>
-      )}
-
-      <div style={styles.cardGrid}>
-        <Link to="/grades" style={styles.card}>
-          <h3 style={styles.cardTitle}>내 성적</h3>
-          <p style={styles.cardDesc}>과목별 성적 및 등급 조회</p>
-        </Link>
-
-        <Link to="/feedbacks" style={styles.card}>
-          <h3 style={styles.cardTitle}>내 피드백</h3>
-          <p style={styles.cardDesc}>선생님이 남긴 피드백 확인</p>
-        </Link>
-
-        <Link to="/notifications" style={styles.card}>
-          <h3 style={styles.cardTitle}>알림</h3>
-          <p style={styles.cardDesc}>성적 및 피드백 알림 확인</p>
-        </Link>
+        {enrollment && (
+          <Badge variant="secondary" className="text-sm">{enrollment.grade}학년 {enrollment.classNum}반 {enrollment.studentNum}번</Badge>
+        )}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {cards.map((c) => (
+          <Link key={c.path} to={c.path} className="group">
+            <Card className="transition-all hover:shadow-md hover:border-primary/20 group-hover:-translate-y-0.5">
+              <CardHeader className="flex flex-row items-center gap-3 pb-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                  <c.icon className={`h-5 w-5 ${c.color}`} />
+                </div>
+                <CardTitle className="text-base">{c.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription>{c.desc}</CardDescription>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  enrollmentBadge: {
-    display: 'inline-block',
-    padding: '6px 14px',
-    backgroundColor: '#e8f0fe',
-    color: '#4a90d9',
-    borderRadius: '20px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    marginBottom: '20px',
-  },
-  cardGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-    gap: '16px',
-  },
-  card: {
-    backgroundColor: '#fff',
-    padding: '20px',
-    borderRadius: '8px',
-    border: '1px solid #e5e5e5',
-    textDecoration: 'none',
-    color: 'inherit',
-  },
-  cardTitle: {
-    margin: '0 0 8px',
-    fontSize: '16px',
-    color: '#333',
-  },
-  cardDesc: {
-    margin: 0,
-    fontSize: '13px',
-    color: '#999',
-  },
-};
 
 export default StudentDashboardPage;
