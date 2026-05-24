@@ -36,6 +36,12 @@ function Layout() {
     { path: '/records', label: '학생부', roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
     { path: '/feedbacks', label: '피드백', roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
     { path: '/counselings', label: '상담내역', roles: ['ADMIN', 'TEACHER'] },
+    { path: '/analytics', label: '분석', roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
+    {
+      path: '/analytics/subjects',
+      label: '과목통계',
+      roles: ['ADMIN', 'TEACHER'],
+    },
     { path: '/admin', label: '관리', roles: ['ADMIN'] },
   ];
 

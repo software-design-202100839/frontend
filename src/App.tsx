@@ -11,6 +11,8 @@ import CounselingPage from './features/counsel/CounselingPage';
 import NotificationPage from './features/notification/NotificationPage';
 import ParentDashboardPage from './features/notification/ParentDashboardPage';
 import AdminPage from './features/admin/AdminPage';
+import AnalyticsDashboardPage from './features/analytics/AnalyticsDashboardPage';
+import SubjectStatisticsPage from './features/analytics/SubjectStatisticsPage';
 import PrivateRoute from './routes/PrivateRoute';
 import Layout from './components/Layout';
 import authService from './services/authService';
@@ -53,6 +55,15 @@ function App() {
             element={
               <PrivateRoute roles={['ADMIN', 'TEACHER']}>
                 <CounselingPage />
+              </PrivateRoute>
+            }
+          />
+          <Route path="analytics" element={<AnalyticsDashboardPage />} />
+          <Route
+            path="analytics/subjects"
+            element={
+              <PrivateRoute roles={['ADMIN', 'TEACHER']}>
+                <SubjectStatisticsPage />
               </PrivateRoute>
             }
           />
