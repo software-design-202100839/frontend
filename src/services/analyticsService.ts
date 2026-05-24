@@ -171,6 +171,15 @@ const analyticsService = {
     return data.data;
   },
 
+  // AI 챗봇 (교사/관리자 전용)
+  async sendChatMessage(question: string): Promise<string> {
+    const { data } = await api.post<ApiResponse<{ answer: string }>>(
+      '/analytics/chat',
+      { question },
+    );
+    return data.data.answer;
+  },
+
   // 과목별 통계 (교사/관리자 전용)
   async getSubjectStatistics(
     year: number,
