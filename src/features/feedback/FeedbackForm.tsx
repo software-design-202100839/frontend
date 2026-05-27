@@ -95,7 +95,9 @@ function FeedbackForm({ studentId, students, editTarget, onSuccess }: Props) {
             <div>
               <Label className="mb-1.5 block">학생</Label>
               <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
-                {selectedStudent ? formatStudentLabel(selectedStudent, CURRENT_YEAR) : `학생 ID: ${studentId}`}
+                {selectedStudent
+                  ? formatStudentLabel(selectedStudent, CURRENT_YEAR)
+                  : `학생 ID: ${studentId}`}
               </div>
             </div>
             <Select value={year.toString()} onChange={(e) => setYear(Number(e.target.value))}>

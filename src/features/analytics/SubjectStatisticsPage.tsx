@@ -35,22 +35,33 @@ function SubjectStatisticsPage() {
   const [year, setYear] = useState(2026);
   const [semester, setSemester] = useState(1);
   const [statistics, setStatistics] = useState<SubjectStatistics[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selectedSubject, setSelectedSubject] = useState<SubjectStatistics | null>(null);
 
   useEffect(() => {
-    setLoading(true);
+    let cancelled = false;
     analyticsService
       .getSubjectStatistics(year, semester)
       .then((data) => {
-        setStatistics(data);
-        setSelectedSubject(data.length > 0 ? data[0] : null);
+        if (!cancelled) {
+          setStatistics(data);
+          setSelectedSubject(data.length > 0 ? data[0] : null);
+        }
       })
       .catch(() => {
-        setStatistics([]);
-        setSelectedSubject(null);
+        if (!cancelled) {
+          setStatistics([]);
+          setSelectedSubject(null);
+        }
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [year, semester]);
 
   // 등급 분포 차트 데이터
@@ -190,7 +201,11 @@ function SubjectStatisticsPage() {
                     <XAxis dataKey="grade" tick={{ fontSize: 14 }} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 12 }} domain={[0, 'auto']} />
                     <Tooltip />
-                    <Bar dataKey="학생수" radius={[4, 4, 0, 0]} label={{ position: 'top', fontSize: 12 }}>
+                    <Bar
+                      dataKey="학생수"
+                      radius={[4, 4, 0, 0]}
+                      label={{ position: 'top', fontSize: 12 }}
+                    >
                       {gradeDistData.map((entry) => (
                         <Cell key={entry.grade} fill={GRADE_COLORS[entry.grade]} />
                       ))}

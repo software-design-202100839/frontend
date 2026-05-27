@@ -64,7 +64,9 @@ function ScoreForm({ studentId, students, subjects, onSuccess }: Props) {
             <div className="space-y-2">
               <Label>학생</Label>
               <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
-                {selectedStudent ? formatStudentLabel(selectedStudent, year) : `학생 ID: ${studentId}`}
+                {selectedStudent
+                  ? formatStudentLabel(selectedStudent, year)
+                  : `학생 ID: ${studentId}`}
               </div>
             </div>
             <div className="space-y-2">

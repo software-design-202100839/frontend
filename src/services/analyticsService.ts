@@ -112,11 +112,7 @@ const analyticsService = {
   },
 
   // 성적 요약
-  async getScoreSummary(
-    studentId: number,
-    year: number,
-    semester: number,
-  ): Promise<ScoreSummary> {
+  async getScoreSummary(studentId: number, year: number, semester: number): Promise<ScoreSummary> {
     const { data } = await api.get<ApiResponse<ScoreSummary>>(
       `/analytics/students/${studentId}/score-summary`,
       { params: { year, semester } },
@@ -172,7 +168,10 @@ const analyticsService = {
   },
 
   // AI 챗봇
-  async sendChatMessage(question: string, sessionId?: string): Promise<{ answer: string; sessionId: string }> {
+  async sendChatMessage(
+    question: string,
+    sessionId?: string,
+  ): Promise<{ answer: string; sessionId: string }> {
     const { data } = await api.post<ApiResponse<{ answer: string; sessionId: string }>>(
       '/analytics/chat',
       { question, sessionId },
@@ -181,10 +180,7 @@ const analyticsService = {
   },
 
   // 과목별 통계 (교사/관리자 전용)
-  async getSubjectStatistics(
-    year: number,
-    semester: number,
-  ): Promise<SubjectStatistics[]> {
+  async getSubjectStatistics(year: number, semester: number): Promise<SubjectStatistics[]> {
     const { data } = await api.get<ApiResponse<SubjectStatistics[]>>(
       '/analytics/subjects/statistics',
       { params: { year, semester } },

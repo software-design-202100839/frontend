@@ -76,7 +76,9 @@ function AiChatWidget() {
 
   const handleSend = async () => {
     const question = input.trim();
-    if (!question || loading) return;
+    if (!question || loading) {
+      return;
+    }
 
     setInput('');
     setMessages((prev) => [...prev, { role: 'user', content: question }]);
@@ -89,7 +91,10 @@ function AiChatWidget() {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: 'ai', content: 'AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.' },
+        {
+          role: 'ai',
+          content: 'AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        },
       ]);
     } finally {
       setLoading(false);
@@ -108,7 +113,9 @@ function AiChatWidget() {
     textareaRef.current?.focus();
   };
 
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
 
   // Closed state: floating button
   if (!isOpen) {
@@ -155,18 +162,13 @@ function AiChatWidget() {
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-[200px] max-h-[400px]">
           {messages.length === 0 && !loading && (
-            <div className="py-8 text-center text-sm text-muted-foreground">
-              {placeholder}
-            </div>
+            <div className="py-8 text-center text-sm text-muted-foreground">{placeholder}</div>
           )}
 
           {messages.map((msg, i) => (
             <div
               key={i}
-              className={cn(
-                'flex gap-2',
-                msg.role === 'user' ? 'justify-end' : 'justify-start',
-              )}
+              className={cn('flex gap-2', msg.role === 'user' ? 'justify-end' : 'justify-start')}
             >
               {msg.role === 'ai' && (
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
@@ -176,9 +178,7 @@ function AiChatWidget() {
               <div
                 className={cn(
                   'max-w-[80%] rounded-lg px-3 py-2 text-sm',
-                  msg.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted border',
+                  msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted border',
                 )}
               >
                 <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -235,11 +235,7 @@ function AiChatWidget() {
               className="flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               disabled={loading}
             />
-            <Button
-              onClick={handleSend}
-              disabled={!input.trim() || loading}
-              size="icon"
-            >
+            <Button onClick={handleSend} disabled={!input.trim() || loading} size="icon">
               <Send className="h-4 w-4" />
             </Button>
           </div>

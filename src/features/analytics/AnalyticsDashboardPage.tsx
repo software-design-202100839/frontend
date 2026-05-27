@@ -80,7 +80,9 @@ function AnalyticsDashboardPage() {
 
   // 학생 선택 시 전체 분석 데이터 로드
   const loadAnalytics = useCallback(async () => {
-    if (!selectedStudentId) return;
+    if (!selectedStudentId) {
+      return;
+    }
     setLoading(true);
     try {
       const [dashboardData, scoreData, trendData, attendanceData, feedbackData, counselData] =
@@ -118,11 +120,12 @@ function AnalyticsDashboardPage() {
 
   // ── 차트 데이터 가공 ──
 
-  const trendChartData = scoreTrend?.trends.map((t) => ({
-    label: `${t.year} ${t.semester}학기`,
-    평균점수: t.averageScore,
-    등급: t.averageGrade,
-  })) ?? [];
+  const trendChartData =
+    scoreTrend?.trends.map((t) => ({
+      label: `${t.year} ${t.semester}학기`,
+      평균점수: t.averageScore,
+      등급: t.averageGrade,
+    })) ?? [];
 
   const feedbackChartData = feedback
     ? [
@@ -147,25 +150,33 @@ function AnalyticsDashboardPage() {
   // ── 헬퍼 렌더링 ──
 
   const renderTrendIcon = (trend: StudentDashboard['scoreTrend']) => {
-    if (trend === 'UP') return <TrendingUp className="h-4 w-4 text-green-600" />;
-    if (trend === 'DOWN') return <TrendingDown className="h-4 w-4 text-red-600" />;
-    if (trend === 'STABLE') return <Minus className="h-4 w-4 text-gray-500" />;
+    if (trend === 'UP') {
+      return <TrendingUp className="h-4 w-4 text-green-600" />;
+    }
+    if (trend === 'DOWN') {
+      return <TrendingDown className="h-4 w-4 text-red-600" />;
+    }
+    if (trend === 'STABLE') {
+      return <Minus className="h-4 w-4 text-gray-500" />;
+    }
     return null;
   };
 
   const renderRiskBadge = (level: StudentDashboard['riskLevel']) => {
-    if (level === 'HIGH')
+    if (level === 'HIGH') {
       return (
         <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
           <AlertTriangle className="mr-1 h-3 w-3" /> 위험
         </Badge>
       );
-    if (level === 'MEDIUM')
+    }
+    if (level === 'MEDIUM') {
       return (
         <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">
           <AlertCircle className="mr-1 h-3 w-3" /> 주의
         </Badge>
       );
+    }
     return (
       <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
         <CheckCircle className="mr-1 h-3 w-3" /> 양호
@@ -264,7 +275,9 @@ function AnalyticsDashboardPage() {
                 <p className="text-sm text-muted-foreground">피드백 / 상담</p>
                 <p className="mt-1 text-3xl font-bold">
                   {dashboard.totalFeedbackCount}{' '}
-                  <span className="text-lg text-muted-foreground">/ {dashboard.totalCounselCount}</span>
+                  <span className="text-lg text-muted-foreground">
+                    / {dashboard.totalCounselCount}
+                  </span>
                 </p>
                 {dashboard.lastCounselDate && (
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -478,7 +491,6 @@ function AnalyticsDashboardPage() {
               </CardContent>
             </Card>
           </div>
-
         </>
       )}
 
