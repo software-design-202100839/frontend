@@ -44,11 +44,11 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            <GraduationCap className="h-6 w-6 text-primary" />
+          <div className="mx-auto">
+            <GraduationCap className="h-8 w-8 text-primary" />
           </div>
           <CardTitle className="text-2xl">SSCM</CardTitle>
           <CardDescription>학생 성적 및 상담 관리 시스템</CardDescription>

@@ -3,8 +3,9 @@ import { Plus, Edit, Trash2, Search, RotateCcw } from 'lucide-react';
 import gradeService from '../../services/gradeService';
 import counselService from '../../services/counselService';
 import type { StudentInfo } from '../../services/gradeService';
-import { formatStudentLabel } from '../../types/student';
-import StudentSelector from '@/components/StudentSelector';
+import { getEnrollment, formatStudentLabel } from '../../types/student';
+import StudentSummaryHeader from '@/components/StudentSummaryHeader';
+import StudentDrawer from '@/components/StudentDrawer';
 
 const CURRENT_YEAR = new Date().getFullYear();
 import type { CounselingResponse, CounselCategory } from '../../services/counselService';
@@ -30,6 +31,7 @@ function CounselingPage() {
   const [searchStartDate, setSearchStartDate] = useState('');
   const [searchEndDate, setSearchEndDate] = useState('');
   const [isSearchMode, setIsSearchMode] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const user = authService.getStoredUser();
   const isTeacher = user?.role === 'TEACHER';
@@ -166,14 +168,33 @@ function CounselingPage() {
         </Select>
       </div>
 
-      {isTeacher && (
-        <StudentSelector
-          students={students}
-          selectedStudentId={selectedStudentId}
-          year={CURRENT_YEAR}
-          onSelect={setSelectedStudentId}
-        />
-      )}
+      {isTeacher &&
+        (() => {
+          const s = students.find((st) => st.id === selectedStudentId) ?? null;
+          const e = s ? getEnrollment(s, CURRENT_YEAR) : undefined;
+          const student = s
+            ? {
+                id: s.id,
+                name: s.name,
+                grade: e?.grade,
+                classNum: e?.classNum,
+                studentNum: e?.studentNum,
+              }
+            : null;
+          return (
+            <>
+              <StudentSummaryHeader student={student} onChangeStudent={() => setDrawerOpen(true)} />
+              <StudentDrawer
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                students={students}
+                onSelect={(id) => setSelectedStudentId(id)}
+                selectedStudentId={selectedStudentId}
+                year={CURRENT_YEAR}
+              />
+            </>
+          );
+        })()}
 
       {canSearch && selectedStudentId && (
         <div className="flex flex-wrap items-center gap-2">

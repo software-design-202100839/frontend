@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import gradeService from '../../services/gradeService';
 import feedbackService from '../../services/feedbackService';
 import type { StudentInfo } from '../../services/gradeService';
-import { formatStudentLabel } from '../../types/student';
-import StudentSelector from '@/components/StudentSelector';
+import { getEnrollment, formatStudentLabel } from '../../types/student';
+import StudentSummaryHeader from '@/components/StudentSummaryHeader';
+import StudentDrawer from '@/components/StudentDrawer';
+import PrivacyBadge from '@/components/PrivacyBadge';
 
 const CURRENT_YEAR = new Date().getFullYear();
 import type { FeedbackResponse, FeedbackCategory } from '../../services/feedbackService';
@@ -31,6 +33,7 @@ function FeedbackPage() {
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<FeedbackResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const user = authService.getStoredUser();
   const isTeacher = user?.role === 'TEACHER';
@@ -150,14 +153,33 @@ function FeedbackPage() {
         </Select>
       </div>
 
-      {isTeacher && (
-        <StudentSelector
-          students={students}
-          selectedStudentId={selectedStudentId}
-          year={CURRENT_YEAR}
-          onSelect={setSelectedStudentId}
-        />
-      )}
+      {isTeacher &&
+        (() => {
+          const s = students.find((st) => st.id === selectedStudentId) ?? null;
+          const e = s ? getEnrollment(s, CURRENT_YEAR) : undefined;
+          const student = s
+            ? {
+                id: s.id,
+                name: s.name,
+                grade: e?.grade,
+                classNum: e?.classNum,
+                studentNum: e?.studentNum,
+              }
+            : null;
+          return (
+            <>
+              <StudentSummaryHeader student={student} onChangeStudent={() => setDrawerOpen(true)} />
+              <StudentDrawer
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                students={students}
+                onSelect={(id) => setSelectedStudentId(id)}
+                selectedStudentId={selectedStudentId}
+                year={CURRENT_YEAR}
+              />
+            </>
+          );
+        })()}
       {isParent && children.length > 1 && (
         <Select
           value={selectedStudentId ?? ''}
@@ -209,28 +231,8 @@ function FeedbackPage() {
               </div>
               <p className="mb-2 text-sm leading-relaxed text-foreground">{fb.content}</p>
               <div className="flex gap-2">
-                <Badge
-                  variant={fb.isVisibleToStudent ? 'success' : 'outline'}
-                  className="text-[11px]"
-                >
-                  {fb.isVisibleToStudent ? (
-                    <Eye className="mr-1 h-3 w-3" />
-                  ) : (
-                    <EyeOff className="mr-1 h-3 w-3" />
-                  )}
-                  학생 {fb.isVisibleToStudent ? '공개' : '비공개'}
-                </Badge>
-                <Badge
-                  variant={fb.isVisibleToParent ? 'success' : 'outline'}
-                  className="text-[11px]"
-                >
-                  {fb.isVisibleToParent ? (
-                    <Eye className="mr-1 h-3 w-3" />
-                  ) : (
-                    <EyeOff className="mr-1 h-3 w-3" />
-                  )}
-                  학부모 {fb.isVisibleToParent ? '공개' : '비공개'}
-                </Badge>
+                <PrivacyBadge target="학생" isPublic={fb.isVisibleToStudent} />
+                <PrivacyBadge target="학부모" isPublic={fb.isVisibleToParent} />
               </div>
             </CardContent>
           </Card>

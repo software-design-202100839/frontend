@@ -36,7 +36,9 @@ import type {
 import gradeService from '../../services/gradeService';
 import type { StudentInfo } from '../../services/gradeService';
 import authService from '../../services/authService';
-import StudentSelector from '@/components/StudentSelector';
+import { getEnrollment } from '../../types/student';
+import StudentSummaryHeader from '@/components/StudentSummaryHeader';
+import StudentDrawer from '@/components/StudentDrawer';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
@@ -45,6 +47,15 @@ import { Badge } from '@/components/ui/badge';
 // 피드백 카테고리별 차트 색상
 const FEEDBACK_COLORS = ['#2563eb', '#f59e0b', '#10b981', '#8b5cf6', '#6b7280'];
 const COUNSEL_COLORS = ['#3b82f6', '#ef4444', '#f97316', '#06b6d4', '#a3a3a3'];
+
+const TABS = [
+  { id: 'summary', label: '요약' },
+  { id: 'scores', label: '성적' },
+  { id: 'records', label: '출결·기록' },
+  { id: 'feedback', label: '피드백·상담' },
+] as const;
+
+type TabId = (typeof TABS)[number]['id'];
 
 function AnalyticsDashboardPage() {
   const user = authService.getStoredUser();
@@ -58,6 +69,8 @@ function AnalyticsDashboardPage() {
   const [year, setYear] = useState(2026);
   const [semester, setSemester] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabId>('summary');
 
   // 분석 데이터 상태
   const [dashboard, setDashboard] = useState<StudentDashboard | null>(null);
@@ -184,6 +197,317 @@ function AnalyticsDashboardPage() {
     );
   };
 
+  // ── Tab Content Renderers ──
+
+  const renderSummaryTab = () => (
+    <div className="space-y-6">
+      {/* KPI Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">평균 점수</p>
+              {dashboard && renderTrendIcon(dashboard.scoreTrend)}
+            </div>
+            <p className="mt-1 text-3xl font-bold text-primary">{dashboard?.avgScore.toFixed(1)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {dashboard?.scoreTrend === 'UP' && '지난 학기 대비 상승'}
+              {dashboard?.scoreTrend === 'DOWN' && '지난 학기 대비 하락'}
+              {dashboard?.scoreTrend === 'STABLE' && '지난 학기와 유사'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-sm text-muted-foreground">위험도</p>
+            <div className="mt-2">{dashboard && renderRiskBadge(dashboard.riskLevel)}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-sm text-muted-foreground">피드백 / 상담</p>
+            <p className="mt-1 text-3xl font-bold">
+              {dashboard?.totalFeedbackCount}{' '}
+              <span className="text-lg text-muted-foreground">
+                / {dashboard?.totalCounselCount}
+              </span>
+            </p>
+            {dashboard?.lastCounselDate && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                마지막 상담: {dashboard.lastCounselDate}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="text-center">
+                <BookOpen className="mx-auto h-5 w-5 text-blue-500" />
+                <p className="mt-1 text-lg font-bold">{dashboard?.attendanceCount}</p>
+                <p className="text-xs text-muted-foreground">출결</p>
+              </div>
+              <div className="text-center">
+                <Award className="mx-auto h-5 w-5 text-yellow-500" />
+                <p className="mt-1 text-lg font-bold">{dashboard?.awardCount}</p>
+                <p className="text-xs text-muted-foreground">수상</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Score Summary */}
+      {scoreSummary && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">성적 요약 — {scoreSummary.subjectCount}과목</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+              {[
+                { label: '총점', value: scoreSummary.totalScore },
+                { label: '평균', value: scoreSummary.averageScore.toFixed(1) },
+                { label: '최고', value: scoreSummary.highestScore },
+                { label: '최저', value: scoreSummary.lowestScore },
+                { label: '평균 등급', value: scoreSummary.averageGrade },
+              ].map((item) => (
+                <div key={item.label} className="text-center">
+                  <p className="text-sm text-muted-foreground">{item.label}</p>
+                  <p className="text-2xl font-bold text-primary">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Risk Level Summary */}
+      {dashboard && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">위험도 평가</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3">
+              {renderRiskBadge(dashboard.riskLevel)}
+              <span className="text-sm text-muted-foreground">
+                {dashboard.riskLevel === 'HIGH' && '즉각적인 관심과 개입이 필요합니다.'}
+                {dashboard.riskLevel === 'MEDIUM' && '지속적인 모니터링이 필요합니다.'}
+                {dashboard.riskLevel === 'LOW' && '현재 학업 상태가 양호합니다.'}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+
+  const renderScoresTab = () => (
+    <div className="space-y-6">
+      {/* Score Summary */}
+      {scoreSummary && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">성적 요약 — {scoreSummary.subjectCount}과목</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+              {[
+                { label: '총점', value: scoreSummary.totalScore },
+                { label: '평균', value: scoreSummary.averageScore.toFixed(1) },
+                { label: '최고', value: scoreSummary.highestScore },
+                { label: '최저', value: scoreSummary.lowestScore },
+                { label: '평균 등급', value: scoreSummary.averageGrade },
+              ].map((item) => (
+                <div key={item.label} className="text-center">
+                  <p className="text-sm text-muted-foreground">{item.label}</p>
+                  <p className="text-2xl font-bold text-primary">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Score Trend Chart */}
+      {trendChartData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">학기별 성적 추이</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={trendChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Line
+                  type="monotone"
+                  dataKey="평균점수"
+                  stroke="#2563eb"
+                  strokeWidth={2}
+                  dot={{ r: 5 }}
+                  activeDot={{ r: 7 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {!scoreSummary && trendChartData.length === 0 && (
+        <div className="py-16 text-center text-muted-foreground">성적 데이터가 없습니다.</div>
+      )}
+    </div>
+  );
+
+  const renderRecordsTab = () => (
+    <div className="space-y-6">
+      {attendance && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">출결 및 기록 현황</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+              {[
+                {
+                  label: '출결',
+                  value: attendance.attendanceCount,
+                  icon: <BookOpen className="h-4 w-4 text-blue-500" />,
+                },
+                {
+                  label: '수상',
+                  value: attendance.awardCount,
+                  icon: <Award className="h-4 w-4 text-yellow-500" />,
+                },
+                {
+                  label: '봉사',
+                  value: attendance.volunteerCount,
+                  icon: <Heart className="h-4 w-4 text-pink-500" />,
+                },
+                {
+                  label: '세부능력',
+                  value: attendance.specialNoteCount,
+                  icon: <FileText className="h-4 w-4 text-purple-500" />,
+                },
+                {
+                  label: '종합의견',
+                  value: attendance.generalOpinionCount,
+                  icon: <MessageSquare className="h-4 w-4 text-green-500" />,
+                },
+              ].map((item) => (
+                <div key={item.label} className="flex flex-col items-center rounded-lg border p-3">
+                  {item.icon}
+                  <p className="mt-2 text-2xl font-bold">{item.value}</p>
+                  <p className="text-xs text-muted-foreground">{item.label}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!attendance && (
+        <div className="py-16 text-center text-muted-foreground">
+          출결 및 기록 데이터가 없습니다.
+        </div>
+      )}
+    </div>
+  );
+
+  const renderFeedbackTab = () => (
+    <div className="space-y-6">
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* 피드백 분포 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              피드백 카테고리 분포 (총 {feedback?.totalFeedbackCount ?? 0}건)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {feedbackChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={feedbackChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={90}
+                    dataKey="value"
+                    label={({ name, value }) => `${name} ${value}`}
+                  >
+                    {feedbackChartData.map((_entry, index) => (
+                      <Cell
+                        key={`fb-${index}`}
+                        fill={FEEDBACK_COLORS[index % FEEDBACK_COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="py-10 text-center text-sm text-muted-foreground">
+                피드백 데이터가 없습니다.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 상담 분포 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              상담 카테고리 분포 (총 {counseling?.totalCounselCount ?? 0}건)
+              {counseling?.lastCounselDate && (
+                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                  마지막 상담: {counseling.lastCounselDate}
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {counselChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={counselChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={90}
+                    dataKey="value"
+                    label={({ name, value }) => `${name} ${value}`}
+                  >
+                    {counselChartData.map((_entry, index) => (
+                      <Cell
+                        key={`cs-${index}`}
+                        fill={COUNSEL_COLORS[index % COUNSEL_COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="py-10 text-center text-sm text-muted-foreground">
+                상담 데이터가 없습니다.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold tracking-tight">학생 분석 대시보드</h2>
@@ -212,14 +536,33 @@ function AnalyticsDashboardPage() {
       </div>
 
       {/* 학생 선택 */}
-      {isTeacher && (
-        <StudentSelector
-          students={students}
-          selectedStudentId={selectedStudentId}
-          year={year}
-          onSelect={setSelectedStudentId}
-        />
-      )}
+      {isTeacher &&
+        (() => {
+          const s = students.find((st) => st.id === selectedStudentId) ?? null;
+          const e = s ? getEnrollment(s, year) : undefined;
+          const student = s
+            ? {
+                id: s.id,
+                name: s.name,
+                grade: e?.grade,
+                classNum: e?.classNum,
+                studentNum: e?.studentNum,
+              }
+            : null;
+          return (
+            <>
+              <StudentSummaryHeader student={student} onChangeStudent={() => setDrawerOpen(true)} />
+              <StudentDrawer
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                students={students}
+                onSelect={(id) => setSelectedStudentId(id)}
+                selectedStudentId={selectedStudentId}
+                year={year}
+              />
+            </>
+          );
+        })()}
       {isParent && children.length > 1 && (
         <Select
           value={selectedStudentId?.toString() ?? ''}
@@ -244,253 +587,28 @@ function AnalyticsDashboardPage() {
 
       {!loading && dashboard && (
         <>
-          {/* ── 종합 요약 카드 ── */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">평균 점수</p>
-                  {renderTrendIcon(dashboard.scoreTrend)}
-                </div>
-                <p className="mt-1 text-3xl font-bold text-primary">
-                  {dashboard.avgScore.toFixed(1)}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {dashboard.scoreTrend === 'UP' && '지난 학기 대비 상승'}
-                  {dashboard.scoreTrend === 'DOWN' && '지난 학기 대비 하락'}
-                  {dashboard.scoreTrend === 'STABLE' && '지난 학기와 유사'}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground">위험도</p>
-                <div className="mt-2">{renderRiskBadge(dashboard.riskLevel)}</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground">피드백 / 상담</p>
-                <p className="mt-1 text-3xl font-bold">
-                  {dashboard.totalFeedbackCount}{' '}
-                  <span className="text-lg text-muted-foreground">
-                    / {dashboard.totalCounselCount}
-                  </span>
-                </p>
-                {dashboard.lastCounselDate && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    마지막 상담: {dashboard.lastCounselDate}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <div className="text-center">
-                    <BookOpen className="mx-auto h-5 w-5 text-blue-500" />
-                    <p className="mt-1 text-lg font-bold">{dashboard.attendanceCount}</p>
-                    <p className="text-xs text-muted-foreground">출결</p>
-                  </div>
-                  <div className="text-center">
-                    <Award className="mx-auto h-5 w-5 text-yellow-500" />
-                    <p className="mt-1 text-lg font-bold">{dashboard.awardCount}</p>
-                    <p className="text-xs text-muted-foreground">수상</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Tab Navigation */}
+          <div className="flex gap-1 rounded-lg bg-muted p-1">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
-          {/* ── 성적 요약 카드 ── */}
-          {scoreSummary && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  성적 요약 — {scoreSummary.subjectCount}과목
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-                  {[
-                    { label: '총점', value: scoreSummary.totalScore },
-                    { label: '평균', value: scoreSummary.averageScore.toFixed(1) },
-                    { label: '최고', value: scoreSummary.highestScore },
-                    { label: '최저', value: scoreSummary.lowestScore },
-                    { label: '평균 등급', value: scoreSummary.averageGrade },
-                  ].map((item) => (
-                    <div key={item.label} className="text-center">
-                      <p className="text-sm text-muted-foreground">{item.label}</p>
-                      <p className="text-2xl font-bold text-primary">{item.value}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* ── 성적 추이 라인 차트 ── */}
-          {trendChartData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">학기별 성적 추이</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={trendChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="평균점수"
-                      stroke="#2563eb"
-                      strokeWidth={2}
-                      dot={{ r: 5 }}
-                      activeDot={{ r: 7 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* ── 출결/기록 요약 ── */}
-          {attendance && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">출결 및 기록 현황</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-                  {[
-                    {
-                      label: '출결',
-                      value: attendance.attendanceCount,
-                      icon: <BookOpen className="h-4 w-4 text-blue-500" />,
-                    },
-                    {
-                      label: '수상',
-                      value: attendance.awardCount,
-                      icon: <Award className="h-4 w-4 text-yellow-500" />,
-                    },
-                    {
-                      label: '봉사',
-                      value: attendance.volunteerCount,
-                      icon: <Heart className="h-4 w-4 text-pink-500" />,
-                    },
-                    {
-                      label: '세부능력',
-                      value: attendance.specialNoteCount,
-                      icon: <FileText className="h-4 w-4 text-purple-500" />,
-                    },
-                    {
-                      label: '종합의견',
-                      value: attendance.generalOpinionCount,
-                      icon: <MessageSquare className="h-4 w-4 text-green-500" />,
-                    },
-                  ].map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex flex-col items-center rounded-lg border p-3"
-                    >
-                      {item.icon}
-                      <p className="mt-2 text-2xl font-bold">{item.value}</p>
-                      <p className="text-xs text-muted-foreground">{item.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* ── 피드백 & 상담 분포 차트 ── */}
-          <div className="grid gap-4 lg:grid-cols-2">
-            {/* 피드백 분포 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  피드백 카테고리 분포 (총 {feedback?.totalFeedbackCount ?? 0}건)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {feedbackChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
-                        data={feedbackChartData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={90}
-                        dataKey="value"
-                        label={({ name, value }) => `${name} ${value}`}
-                      >
-                        {feedbackChartData.map((_entry, index) => (
-                          <Cell
-                            key={`fb-${index}`}
-                            fill={FEEDBACK_COLORS[index % FEEDBACK_COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="py-10 text-center text-sm text-muted-foreground">
-                    피드백 데이터가 없습니다.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* 상담 분포 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  상담 카테고리 분포 (총 {counseling?.totalCounselCount ?? 0}건)
-                  {counseling?.lastCounselDate && (
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">
-                      마지막 상담: {counseling.lastCounselDate}
-                    </span>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {counselChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
-                        data={counselChartData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={90}
-                        dataKey="value"
-                        label={({ name, value }) => `${name} ${value}`}
-                      >
-                        {counselChartData.map((_entry, index) => (
-                          <Cell
-                            key={`cs-${index}`}
-                            fill={COUNSEL_COLORS[index % COUNSEL_COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="py-10 text-center text-sm text-muted-foreground">
-                    상담 데이터가 없습니다.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+          {/* Tab Content */}
+          {activeTab === 'summary' && renderSummaryTab()}
+          {activeTab === 'scores' && renderScoresTab()}
+          {activeTab === 'records' && renderRecordsTab()}
+          {activeTab === 'feedback' && renderFeedbackTab()}
         </>
       )}
 

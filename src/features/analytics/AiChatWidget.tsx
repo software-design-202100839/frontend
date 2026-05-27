@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { Bot, Send, User, Loader2, X, MessageCircle, Trash2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import analyticsService from '../../services/analyticsService';
 import authService from '../../services/authService';
 import { Button } from '@/components/ui/button';
@@ -133,7 +135,7 @@ function AiChatWidget() {
   return (
     <>
       {/* Chat window */}
-      <div className="fixed bottom-24 right-6 z-50 w-96 max-h-[600px] rounded-xl border bg-background shadow-2xl flex flex-col">
+      <div className="fixed bottom-24 right-4 z-50 w-[calc(100vw-2rem)] max-h-[600px] rounded-xl border bg-background shadow-2xl flex flex-col md:right-6 md:w-96">
         {/* Header */}
         <div className="flex items-center justify-between border-b px-4 py-3">
           <div className="flex items-center gap-2">
@@ -181,7 +183,13 @@ function AiChatWidget() {
                   msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted border',
                 )}
               >
-                <p className="whitespace-pre-wrap">{msg.content}</p>
+                {msg.role === 'ai' ? (
+                  <div className="prose prose-sm max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                )}
               </div>
               {msg.role === 'user' && (
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">

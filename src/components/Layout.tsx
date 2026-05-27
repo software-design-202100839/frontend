@@ -1,17 +1,30 @@
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { Bell, LogOut, GraduationCap } from 'lucide-react';
+import { useState } from 'react';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Bell, LogOut, Menu } from 'lucide-react';
+import { Toaster } from 'sonner';
 import authService from '../services/authService';
 import { useNotification } from '../hooks/useNotification';
 import AiChatWidget from '../features/analytics/AiChatWidget';
+import AppSidebar from './AppSidebar';
+import { Sheet, SheetContent } from './ui/sheet';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { cn } from '@/lib/utils';
 
 function Layout() {
   const navigate = useNavigate();
-  const location = useLocation();
   const user = authService.getStoredUser();
   const { unreadCount } = useNotification();
+
+  const [collapsed, setCollapsed] = useState(() => {
+    return localStorage.getItem('sscm-sidebar-collapsed') === 'true';
+  });
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem('sscm-sidebar-collapsed', String(next));
+  };
 
   const handleLogout = async () => {
     try {
@@ -31,48 +44,35 @@ function Layout() {
     PARENT: '학부모',
   };
 
-  const navItems = [
-    { path: '/', label: '대시보드', roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
-    { path: '/grades', label: '성적 관리', roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
-    { path: '/records', label: '학생부', roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
-    { path: '/feedbacks', label: '피드백', roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
-    { path: '/counselings', label: '상담내역', roles: ['ADMIN', 'TEACHER'] },
-    { path: '/analytics', label: '분석', roles: ['ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
-    {
-      path: '/analytics/subjects',
-      label: '과목통계',
-      roles: ['ADMIN', 'TEACHER'],
-    },
-    { path: '/admin', label: '관리', roles: ['ADMIN'] },
-  ];
-
-  const visibleNavItems = navItems.filter((item) => item.roles.includes(user?.role || ''));
-
   return (
-    <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-          <div className="flex items-center gap-6">
-            <Link to="/" className="flex items-center gap-2 font-bold text-primary">
-              <GraduationCap className="h-5 w-5" />
-              <span className="text-lg">SSCM</span>
-            </Link>
-            <nav className="hidden md:flex items-center gap-1">
-              {visibleNavItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    'rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                    location.pathname === item.path
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                  )}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+    <div className="flex h-screen bg-background">
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <AppSidebar collapsed={collapsed} onToggle={toggleCollapsed} userRole={user?.role || ''} />
+      </div>
+
+      {/* Mobile Sheet Sidebar */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="left" className="w-[220px] p-0">
+          <AppSidebar
+            collapsed={false}
+            onToggle={() => setMobileOpen(false)}
+            userRole={user?.role || ''}
+          />
+        </SheetContent>
+      </Sheet>
+
+      {/* Main Content Area */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Top Bar */}
+        <header className="flex h-14 shrink-0 items-center justify-between border-b bg-background px-4">
+          <div className="flex items-center gap-2">
+            <button
+              className="rounded-md p-2 hover:bg-accent md:hidden"
+              onClick={() => setMobileOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </button>
           </div>
 
           <div className="flex items-center gap-3">
@@ -86,7 +86,7 @@ function Layout() {
                 )}
               </Button>
             </Link>
-            <div className="hidden sm:flex items-center gap-2 text-sm">
+            <div className="hidden items-center gap-2 text-sm sm:flex">
               <span className="font-medium">{user?.name}</span>
               <Badge variant="secondary">{roleLabel[user?.role || '']}</Badge>
             </div>
@@ -94,14 +94,18 @@ function Layout() {
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6">
-        <Outlet />
-      </main>
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+            <Outlet />
+          </div>
+        </main>
+      </div>
 
       <AiChatWidget />
+      <Toaster position="top-right" />
     </div>
   );
 }

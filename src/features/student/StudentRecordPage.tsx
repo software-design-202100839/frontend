@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import gradeService from '../../services/gradeService';
 import studentService from '../../services/studentService';
 import type { StudentInfo } from '../../services/gradeService';
 import type { Subject } from '../../services/gradeService';
-import { formatStudentLabel } from '../../types/student';
-import StudentSelector from '@/components/StudentSelector';
+import { getEnrollment, formatStudentLabel } from '../../types/student';
+import StudentSummaryHeader from '@/components/StudentSummaryHeader';
+import StudentDrawer from '@/components/StudentDrawer';
+import PrivacyBadge from '@/components/PrivacyBadge';
 import type {
   StudentRecord,
   RecordType,
@@ -35,6 +37,7 @@ function StudentRecordPage() {
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<StudentRecord | null>(null);
   const [loading, setLoading] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const user = authService.getStoredUser();
   const isTeacher = user?.role === 'TEACHER';
@@ -189,14 +192,33 @@ function StudentRecordPage() {
         </Select>
       </div>
 
-      {isTeacher && (
-        <StudentSelector
-          students={students}
-          selectedStudentId={selectedStudentId}
-          year={year}
-          onSelect={setSelectedStudentId}
-        />
-      )}
+      {isTeacher &&
+        (() => {
+          const s = students.find((st) => st.id === selectedStudentId) ?? null;
+          const e = s ? getEnrollment(s, year) : undefined;
+          const student = s
+            ? {
+                id: s.id,
+                name: s.name,
+                grade: e?.grade,
+                classNum: e?.classNum,
+                studentNum: e?.studentNum,
+              }
+            : null;
+          return (
+            <>
+              <StudentSummaryHeader student={student} onChangeStudent={() => setDrawerOpen(true)} />
+              <StudentDrawer
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                students={students}
+                onSelect={(id) => setSelectedStudentId(id)}
+                selectedStudentId={selectedStudentId}
+                year={year}
+              />
+            </>
+          );
+        })()}
       {isParent && children.length > 1 && (
         <Select
           value={selectedStudentId ?? ''}
@@ -240,28 +262,8 @@ function StudentRecordPage() {
                 </span>
                 {isTeacher && (
                   <div className="flex gap-1">
-                    <Badge
-                      variant={record.isVisibleToStudent ? 'success' : 'outline'}
-                      className="text-[11px]"
-                    >
-                      {record.isVisibleToStudent ? (
-                        <Eye className="mr-1 h-3 w-3" />
-                      ) : (
-                        <EyeOff className="mr-1 h-3 w-3" />
-                      )}
-                      학생 {record.isVisibleToStudent ? '공개' : '비공개'}
-                    </Badge>
-                    <Badge
-                      variant={record.isVisibleToParent ? 'success' : 'outline'}
-                      className="text-[11px]"
-                    >
-                      {record.isVisibleToParent ? (
-                        <Eye className="mr-1 h-3 w-3" />
-                      ) : (
-                        <EyeOff className="mr-1 h-3 w-3" />
-                      )}
-                      학부모 {record.isVisibleToParent ? '공개' : '비공개'}
-                    </Badge>
+                    <PrivacyBadge target="학생" isPublic={record.isVisibleToStudent} />
+                    <PrivacyBadge target="학부모" isPublic={record.isVisibleToParent} />
                   </div>
                 )}
                 {isTeacher && (

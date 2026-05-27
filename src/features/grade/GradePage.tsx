@@ -3,9 +3,11 @@ import { Plus, Trash2 } from 'lucide-react';
 import gradeService from '../../services/gradeService';
 import type { StudentInfo, StudentScoreSummary, Subject } from '../../services/gradeService';
 import authService from '../../services/authService';
+import { getEnrollment } from '../../types/student';
 import ScoreForm from './ScoreForm';
 import ScoreRadarChart from './ScoreRadarChart';
-import StudentSelector from '@/components/StudentSelector';
+import StudentSummaryHeader from '@/components/StudentSummaryHeader';
+import StudentDrawer from '@/components/StudentDrawer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
@@ -27,6 +29,7 @@ function GradePage() {
   const [summary, setSummary] = useState<StudentScoreSummary | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const user = authService.getStoredUser();
   const isTeacher = user?.role === 'TEACHER';
@@ -125,14 +128,33 @@ function GradePage() {
         </Select>
       </div>
 
-      {isTeacher && (
-        <StudentSelector
-          students={students}
-          selectedStudentId={selectedStudentId}
-          year={year}
-          onSelect={setSelectedStudentId}
-        />
-      )}
+      {isTeacher &&
+        (() => {
+          const s = students.find((st) => st.id === selectedStudentId) ?? null;
+          const e = s ? getEnrollment(s, year) : undefined;
+          const student = s
+            ? {
+                id: s.id,
+                name: s.name,
+                grade: e?.grade,
+                classNum: e?.classNum,
+                studentNum: e?.studentNum,
+              }
+            : null;
+          return (
+            <>
+              <StudentSummaryHeader student={student} onChangeStudent={() => setDrawerOpen(true)} />
+              <StudentDrawer
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                students={students}
+                onSelect={(id) => setSelectedStudentId(id)}
+                selectedStudentId={selectedStudentId}
+                year={year}
+              />
+            </>
+          );
+        })()}
       {isParent && children.length > 1 && (
         <Select
           value={selectedStudentId?.toString() ?? ''}
