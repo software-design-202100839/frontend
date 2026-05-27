@@ -97,32 +97,29 @@ function AnalyticsDashboardPage() {
       return;
     }
     setLoading(true);
-    try {
-      const [dashboardData, scoreData, trendData, attendanceData, feedbackData, counselData] =
-        await Promise.all([
-          analyticsService.getStudentDashboard(selectedStudentId, year, semester),
-          analyticsService.getScoreSummary(selectedStudentId, year, semester),
-          analyticsService.getScoreTrend(selectedStudentId),
-          analyticsService.getAttendanceSummary(selectedStudentId, year, semester),
-          analyticsService.getFeedbackSummary(selectedStudentId, year, semester),
-          analyticsService.getCounselingSummary(selectedStudentId, year, semester),
-        ]);
-      setDashboard(dashboardData);
-      setScoreSummary(scoreData);
-      setScoreTrend(trendData);
-      setAttendance(attendanceData);
-      setFeedback(feedbackData);
-      setCounseling(counselData);
-    } catch {
-      setDashboard(null);
-      setScoreSummary(null);
-      setScoreTrend(null);
-      setAttendance(null);
-      setFeedback(null);
-      setCounseling(null);
-    } finally {
-      setLoading(false);
-    }
+    const safe = async <T,>(fn: () => Promise<T>): Promise<T | null> => {
+      try {
+        return await fn();
+      } catch {
+        return null;
+      }
+    };
+    const [dashboardData, scoreData, trendData, attendanceData, feedbackData, counselData] =
+      await Promise.all([
+        safe(() => analyticsService.getStudentDashboard(selectedStudentId, year, semester)),
+        safe(() => analyticsService.getScoreSummary(selectedStudentId, year, semester)),
+        safe(() => analyticsService.getScoreTrend(selectedStudentId)),
+        safe(() => analyticsService.getAttendanceSummary(selectedStudentId, year, semester)),
+        safe(() => analyticsService.getFeedbackSummary(selectedStudentId, year, semester)),
+        safe(() => analyticsService.getCounselingSummary(selectedStudentId, year, semester)),
+      ]);
+    setDashboard(dashboardData);
+    setScoreSummary(scoreData);
+    setScoreTrend(trendData);
+    setAttendance(attendanceData);
+    setFeedback(feedbackData);
+    setCounseling(counselData);
+    setLoading(false);
   }, [selectedStudentId, year, semester]);
 
   useEffect(() => {

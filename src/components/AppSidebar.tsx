@@ -106,11 +106,7 @@ function AppSidebar({ collapsed, onToggle, userRole }: AppSidebarProps) {
   const location = useLocation();
 
   const isActive = (path: string) => {
-    if (path === '/') {
-      return location.pathname === '/';
-    }
-    // /analytics vs /analytics/subjects 구분: 정확 매칭 또는 하위 경로
-    return location.pathname === path || location.pathname.startsWith(path + '/');
+    return location.pathname === path;
   };
 
   return (
