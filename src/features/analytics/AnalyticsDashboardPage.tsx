@@ -65,7 +65,15 @@ function AnalyticsDashboardPage() {
   const children = user?.children ?? [];
 
   const [students, setStudents] = useState<StudentInfo[]>([]);
-  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(() => {
+    if (isStudent && user?.roleEntityId) {
+      return user.roleEntityId;
+    }
+    if (isParent && children.length > 0) {
+      return children[0].id;
+    }
+    return null;
+  });
   const [year, setYear] = useState(2026);
   const [semester, setSemester] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -84,11 +92,8 @@ function AnalyticsDashboardPage() {
   useEffect(() => {
     if (isTeacher) {
       gradeService.getStudents().then(setStudents);
-    } else if (isStudent && user?.roleEntityId) {
-      setSelectedStudentId(user.roleEntityId);
-    } else if (isParent && children.length > 0) {
-      setSelectedStudentId(children[0].id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 학생 선택 시 전체 분석 데이터 로드
@@ -124,9 +129,10 @@ function AnalyticsDashboardPage() {
 
   useEffect(() => {
     if (selectedStudentId) {
-      loadAnalytics();
+      void loadAnalytics();
     }
-  }, [selectedStudentId, year, semester, loadAnalytics]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStudentId, year, semester]);
 
   // ── 차트 데이터 가공 ──
 
