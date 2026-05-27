@@ -68,3 +68,25 @@ jobs:
             --tasks $TASK_ARN \
             --query 'tasks[0].{status:lastStatus,health:healthStatus,startedAt:startedAt}' \
             --output table
+
+      # CloudFront는 S3 오리진을 사용하므로 S3에도 빌드 결과물 배포
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy to S3
+        run: |
+          aws s3 sync dist/ s3://sscm-frontend-static --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id E3JYLIWWT7NFX5 \
+            --paths "/*"
