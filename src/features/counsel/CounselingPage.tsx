@@ -129,6 +129,7 @@ function CounselingPage() {
           <Button
             onClick={() => (showForm ? handleCancel() : setShowForm(true))}
             variant={showForm ? 'outline' : 'default'}
+            disabled={!showForm && !editTarget && !selectedStudentId}
           >
             {showForm ? (
               '취소'
@@ -141,8 +142,13 @@ function CounselingPage() {
         )}
       </div>
 
-      {showForm && (
-        <CounselingForm students={students} editTarget={editTarget} onSuccess={handleCreated} />
+      {showForm && (selectedStudentId || editTarget) && (
+        <CounselingForm
+          studentId={editTarget?.studentId ?? selectedStudentId!}
+          students={students}
+          editTarget={editTarget}
+          onSuccess={handleCreated}
+        />
       )}
 
       <div className="flex flex-wrap gap-3">

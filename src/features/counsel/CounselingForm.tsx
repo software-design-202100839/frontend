@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 const CURRENT_YEAR = new Date().getFullYear();
 
 interface Props {
+  studentId: number;
   students: StudentInfo[];
   editTarget?: CounselingResponse | null;
   onSuccess: () => void;
@@ -27,8 +28,7 @@ const categories: { value: CounselCategory; label: string }[] = [
   { value: 'OTHER', label: '기타' },
 ];
 
-function CounselingForm({ students, editTarget, onSuccess }: Props) {
-  const [studentId, setStudentId] = useState<number | ''>(editTarget?.studentId ?? '');
+function CounselingForm({ studentId, students, editTarget, onSuccess }: Props) {
   const [counselDate, setCounselDate] = useState(
     editTarget?.counselDate ?? new Date().toISOString().slice(0, 10),
   );
@@ -40,14 +40,11 @@ function CounselingForm({ students, editTarget, onSuccess }: Props) {
   const [submitting, setSubmitting] = useState(false);
 
   const isEdit = !!editTarget;
+  const selectedStudent = students.find((s) => s.id === studentId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isEdit && !studentId) {
-      setError('학생을 선택해주세요');
-      return;
-    }
     if (!counselDate) {
       setError('상담 날짜를 선택해주세요');
       return;
@@ -73,7 +70,7 @@ function CounselingForm({ students, editTarget, onSuccess }: Props) {
         await counselService.updateCounseling(editTarget.id, payload);
       } else {
         await counselService.createCounseling({
-          studentId: Number(studentId),
+          studentId,
           ...payload,
         });
       }
@@ -96,22 +93,12 @@ function CounselingForm({ students, editTarget, onSuccess }: Props) {
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <div className="flex flex-wrap gap-3">
-            {!isEdit && (
-              <div className="flex-1 min-w-[180px]">
-                <Label className="mb-1.5 block">학생</Label>
-                <Select
-                  value={studentId}
-                  onChange={(e) => setStudentId(Number(e.target.value) || '')}
-                >
-                  <option value="">학생 선택</option>
-                  {students.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {formatStudentLabel(s, CURRENT_YEAR)}
-                    </option>
-                  ))}
-                </Select>
+            <div className="flex-1 min-w-[180px]">
+              <Label className="mb-1.5 block">학생</Label>
+              <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
+                {selectedStudent ? formatStudentLabel(selectedStudent, CURRENT_YEAR) : `학생 ID: ${studentId}`}
               </div>
-            )}
+            </div>
 
             <div className="flex-1 min-w-[160px]">
               <Label className="mb-1.5 block">상담 날짜</Label>

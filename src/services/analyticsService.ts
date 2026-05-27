@@ -171,13 +171,13 @@ const analyticsService = {
     return data.data;
   },
 
-  // AI 챗봇 (교사/관리자 전용)
-  async sendChatMessage(question: string): Promise<string> {
-    const { data } = await api.post<ApiResponse<{ answer: string }>>(
+  // AI 챗봇
+  async sendChatMessage(question: string, sessionId?: string): Promise<{ answer: string; sessionId: string }> {
+    const { data } = await api.post<ApiResponse<{ answer: string; sessionId: string }>>(
       '/analytics/chat',
-      { question },
+      { question, sessionId },
     );
-    return data.data.answer;
+    return data.data;
   },
 
   // 과목별 통계 (교사/관리자 전용)

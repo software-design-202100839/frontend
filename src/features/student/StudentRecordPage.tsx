@@ -127,6 +127,7 @@ function StudentRecordPage() {
               }
             }}
             variant={showForm ? 'outline' : 'default'}
+            disabled={!showForm && !selectedStudentId && !editTarget}
           >
             {showForm ? (
               '취소'

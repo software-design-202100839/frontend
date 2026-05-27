@@ -113,6 +113,7 @@ function FeedbackPage() {
           <Button
             onClick={() => (showForm ? handleCancel() : setShowForm(true))}
             variant={showForm ? 'outline' : 'default'}
+            disabled={!showForm && !editTarget && !selectedStudentId}
           >
             {showForm ? (
               '취소'
@@ -125,8 +126,13 @@ function FeedbackPage() {
         )}
       </div>
 
-      {showForm && (
-        <FeedbackForm students={students} editTarget={editTarget} onSuccess={handleCreated} />
+      {showForm && (selectedStudentId || editTarget) && (
+        <FeedbackForm
+          studentId={editTarget?.studentId ?? selectedStudentId!}
+          students={students}
+          editTarget={editTarget}
+          onSuccess={handleCreated}
+        />
       )}
 
       <div className="flex flex-wrap gap-3">

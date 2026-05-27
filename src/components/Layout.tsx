@@ -2,6 +2,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { Bell, LogOut, GraduationCap } from 'lucide-react';
 import authService from '../services/authService';
 import { useNotification } from '../hooks/useNotification';
+import AiChatWidget from '../features/analytics/AiChatWidget';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
@@ -99,6 +100,8 @@ function Layout() {
       <main className="mx-auto max-w-7xl px-4 py-6">
         <Outlet />
       </main>
+
+      <AiChatWidget />
     </div>
   );
 }

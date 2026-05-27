@@ -5,12 +5,14 @@ import type { StudentInfo } from '../../services/gradeService';
 import { formatStudentLabel } from '../../types/student';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
 interface Props {
+  studentId: number;
   students: StudentInfo[];
   editTarget?: FeedbackResponse | null;
   onSuccess: () => void;
@@ -24,8 +26,7 @@ const categories: { value: FeedbackCategory; label: string }[] = [
   { value: 'GENERAL', label: '일반' },
 ];
 
-function FeedbackForm({ students, editTarget, onSuccess }: Props) {
-  const [studentId, setStudentId] = useState<number | ''>(editTarget?.studentId ?? '');
+function FeedbackForm({ studentId, students, editTarget, onSuccess }: Props) {
   const [year, setYear] = useState(CURRENT_YEAR);
   const [semester, setSemester] = useState(1);
   const [category, setCategory] = useState<FeedbackCategory>(editTarget?.category ?? 'GENERAL');
@@ -40,14 +41,11 @@ function FeedbackForm({ students, editTarget, onSuccess }: Props) {
   const [submitting, setSubmitting] = useState(false);
 
   const isEdit = !!editTarget;
+  const selectedStudent = students.find((s) => s.id === studentId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isEdit && !studentId) {
-      setError('학생을 선택해주세요');
-      return;
-    }
     if (!content.trim()) {
       setError('내용을 입력해주세요');
       return;
@@ -66,7 +64,7 @@ function FeedbackForm({ students, editTarget, onSuccess }: Props) {
         });
       } else {
         await feedbackService.createFeedback({
-          studentId: Number(studentId),
+          studentId,
           year,
           semester,
           category,
@@ -94,19 +92,12 @@ function FeedbackForm({ students, editTarget, onSuccess }: Props) {
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {!isEdit && (
-              <Select
-                value={studentId}
-                onChange={(e) => setStudentId(Number(e.target.value) || '')}
-              >
-                <option value="">학생 선택</option>
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {formatStudentLabel(s, CURRENT_YEAR)}
-                  </option>
-                ))}
-              </Select>
-            )}
+            <div>
+              <Label className="mb-1.5 block">학생</Label>
+              <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
+                {selectedStudent ? formatStudentLabel(selectedStudent, CURRENT_YEAR) : `학생 ID: ${studentId}`}
+              </div>
+            </div>
             <Select value={year.toString()} onChange={(e) => setYear(Number(e.target.value))}>
               {[2024, 2025, 2026].map((y) => (
                 <option key={y} value={y}>

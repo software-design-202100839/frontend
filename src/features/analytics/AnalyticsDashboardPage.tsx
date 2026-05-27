@@ -37,7 +37,7 @@ import gradeService from '../../services/gradeService';
 import type { StudentInfo } from '../../services/gradeService';
 import authService from '../../services/authService';
 import StudentSelector from '@/components/StudentSelector';
-import AiChatWidget from './AiChatWidget';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -479,8 +479,6 @@ function AnalyticsDashboardPage() {
             </Card>
           </div>
 
-          {/* ── AI 챗봇 위젯 ── */}
-          <AiChatWidget />
         </>
       )}
 

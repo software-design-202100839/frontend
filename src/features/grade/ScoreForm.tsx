@@ -9,13 +9,13 @@ import { Select } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Props {
+  studentId: number;
   students: StudentInfo[];
   subjects: Subject[];
   onSuccess: () => void;
 }
 
-function ScoreForm({ students, subjects, onSuccess }: Props) {
-  const [studentId, setStudentId] = useState<number | ''>('');
+function ScoreForm({ studentId, students, subjects, onSuccess }: Props) {
   const [subjectId, setSubjectId] = useState<number | ''>('');
   const [year, setYear] = useState(2026);
   const [semester, setSemester] = useState(1);
@@ -23,9 +23,11 @@ function ScoreForm({ students, subjects, onSuccess }: Props) {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const selectedStudent = students.find((s) => s.id === studentId);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!studentId || !subjectId || !score) {
+    if (!subjectId || !score) {
       setError('모든 항목을 입력해주세요');
       return;
     }
@@ -33,7 +35,7 @@ function ScoreForm({ students, subjects, onSuccess }: Props) {
     setError('');
     try {
       await gradeService.createScore({
-        studentId: Number(studentId),
+        studentId,
         subjectId: Number(subjectId),
         year,
         semester,
@@ -61,17 +63,9 @@ function ScoreForm({ students, subjects, onSuccess }: Props) {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>학생</Label>
-              <Select
-                value={studentId.toString()}
-                onChange={(e) => setStudentId(Number(e.target.value) || '')}
-              >
-                <option value="">학생 선택</option>
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {formatStudentLabel(s, year)}
-                  </option>
-                ))}
-              </Select>
+              <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
+                {selectedStudent ? formatStudentLabel(selectedStudent, year) : `학생 ID: ${studentId}`}
+              </div>
             </div>
             <div className="space-y-2">
               <Label>과목</Label>

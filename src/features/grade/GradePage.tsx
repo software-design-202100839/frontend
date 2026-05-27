@@ -79,7 +79,10 @@ function GradePage() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight">성적 관리</h2>
         {isTeacher && (
-          <Button onClick={() => setShowForm(!showForm)}>
+          <Button
+            onClick={() => setShowForm(!showForm)}
+            disabled={!showForm && !selectedStudentId}
+          >
             {showForm ? (
               '취소'
             ) : (
@@ -91,8 +94,9 @@ function GradePage() {
         )}
       </div>
 
-      {showForm && (
+      {showForm && selectedStudentId && (
         <ScoreForm
+          studentId={selectedStudentId}
           students={students}
           subjects={subjects}
           onSuccess={() => {
